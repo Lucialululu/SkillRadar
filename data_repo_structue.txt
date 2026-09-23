@@ -1,0 +1,17 @@
+./data/kaggle/postings.csv
+./data/kaggle/mappings/skills.csv
+./data/kaggle/mappings/industries.csv
+./data/kaggle/jobs/benefits.csv
+./data/kaggle/jobs/salaries.csv
+./data/kaggle/jobs/job_industries.csv
+./data/kaggle/jobs/job_skills.csv
+./data/kaggle/companies/company_industries.csv
+./data/kaggle/companies/company_specialities.csv
+./data/kaggle/companies/companies.csv
+./data/kaggle/companies/employee_counts.csv
+./data/onet/essential_skills.csv
+./data/onet/software_skills.csv
+./data/onet/transferable_skills.csv
+./data/onet/related_occupations.csv
+./data/onet/occupation_data.csv
+./data/onet/job_titles.csv
