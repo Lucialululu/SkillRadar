@@ -27,15 +27,27 @@ PyTorch   - missing - in 13% of data scientist postings - O*NET "hot technology"
 
 ## How do I run the app?
 
-*(will be filled in once `main.py` exists, same pattern as: `uv sync` → `source .venv/bin/activate` → `python main.py`)*
-
-For now, the work lives in notebooks:
-
 ```bash
 uv sync
-source .venv/bin/activate
-jupyter notebook preprocessing/
+# 1. once (and again after changing the matcher): precompute which tools each posting mentions
+uv run python main.py build --source primary      # streams the 5 GB job_summary.csv, takes a while
+uv run python main.py build --source secondary
+# 2. the skill-gap report
+uv run python main.py report my_cv.pdf "data scientist"
+uv run python main.py report my_cv.pdf "data scientist" --source secondary --level entry internship
+uv run python main.py report my_cv.pdf "data scientist" --explain     # which words matched which tool
 ```
+
+Roles: data scientist, data analyst, software engineer, ml engineer, ux designer. CVs can be .pdf, .docx, .txt or .md, and are only read into memory, never saved.
+
+Run the tests with `uv run pytest`.
+
+| Module | What it does |
+|---|---|
+| `skillradar/matcher.py` | O*NET keyword matcher, used for CVs, posting text and dataset labels |
+| `skillradar/cv_parser.py` | CV file → clean text |
+| `skillradar/demand.py` | `build`: postings → `data/processed/posting_tools_<source>.csv`; query: % of postings per tool for a role (with 95% Wilson interval) |
+| `skillradar/report.py` | CV tools vs. role demand → ranked missing skills + demand-weighted coverage |
 
 ## How does it work?
 
