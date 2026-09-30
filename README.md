@@ -1,9 +1,9 @@
 # SkillRadar
 SkillRadar: A CV-to-job-market skill-gap tool for job-seeking students, 02830 Advanced Project in Digital Media Engineering
 
-<p align="center">
+<!-- <p align="center">
   <img src="skillradar_logo.png" width="350" alt="SkillRadar Logo">
-</p>
+</p> -->
 
 ## What is this?
 
@@ -15,11 +15,18 @@ SkillRadar takes your CV and a target role, compares your skills against real, a
 CV → extract & normalize skills → compare against job-postings data → rank missing skills by demand
 ```
 
-**Example output** (data scientist, numbers from our actual data):
+**Example output** (data scientist, real numbers from the primary dataset, shortened):
 ```
-AWS       - missing - in 24% of data scientist postings - O*NET "hot technology"
-Tableau   - missing - in 21% of data scientist postings - O*NET "hot technology"
-PyTorch   - missing - in 13% of data scientist postings - O*NET "hot technology"
+SkillRadar: data scientist (1,027 postings, LinkedIn Jan 2024)
+Your CV covers 42% of the demand for the top 15 tools.
+
+Missing, ranked by demand:
+  SQL           missing  in 55% of postings (52%-58%)    O*NET Hot Technology + In Demand
+  AWS           missing  in 25% of postings (22%-27%)    O*NET Hot Technology + In Demand
+  Tableau       missing  in 21% of postings (19%-24%)    O*NET Hot Technology + In Demand
+
+Already on your CV:
+  Python        have     in 79% of postings (76%-81%)    O*NET Hot Technology + In Demand
 ```
 
 > [!NOTE]
@@ -27,26 +34,99 @@ PyTorch   - missing - in 13% of data scientist postings - O*NET "hot technology"
 
 ## How do I run the app?
 
+Run every command below from the repo root (the folder with `main.py`). All commands can be copy-pasted as they are; the only things you ever edit are the **CV path** and the **role**, marked below.
+
+### 1. One-time setup
+
 ```bash
-uv sync
-# 1. once (and again after changing the matcher): precompute which tools each posting mentions
-uv run python main.py build --source primary      # streams the 5 GB job_summary.csv, takes a while
-uv run python main.py build --source secondary
-# 2. the skill-gap report
-uv run python main.py report my_cv.pdf "data scientist"
-uv run python main.py report my_cv.pdf "data scientist" --source secondary --level entry internship
-uv run python main.py report my_cv.pdf "data scientist" --explain     # which words matched which tool
+uv sync          # installs everything, including the skillradar package itself
+uv run pytest    # should end with "... passed", nothing failed
 ```
 
-Roles: data scientist, data analyst, software engineer, ml engineer, ux designer. CVs can be .pdf, .docx, .txt or .md, and are only read into memory, never saved.
+You also need the data in `data/`, see [Data requirements](#data-requirements) below.
 
-Run the tests with `uv run pytest`.
+### 2. Build the job-market tables (once)
 
-| Module | What it does |
+```bash
+uv run python main.py build --source primary      # streams the 5 GB job_summary.csv, takes around 3-10 minutes
+```
+
+This runs the skill matcher over every posting for our five roles once and saves the result to `data/processed/posting_tools_<source>.csv` (a few MB, gitignored). Every report afterwards only reads that small file, which is why reports are instant.
+
+> [!WARNING]
+> **Rebuild after changing the matcher** (e.g. adding a word to `MANUAL_DROP` in `skillradar/matcher.py`). Otherwise the postings are still matched with the old rules while your CV is matched with the new ones.
+
+### 3. Add your CV
+
+Put CVs in `data/cvs/`. Like everything in `data/`, that folder is gitignored, so CVs never end up on GitHub.
+
+```bash
+mkdir -p data/cvs
+```
+
+Accepted formats: `.pdf`, `.docx`, `.txt`, `.md`. The PDF has to contain real text: a scanned image will give an error.
+
+> [!IMPORTANT]
+> **Privacy:** use neutral names (`cv01.pdf`, `cv02.pdf`, ...), not people's names. Only use a friend's CV with their OK, keep it on your own laptop, and delete it after the project. The app only reads CVs into memory and never saves their text anywhere.
+
+### 4. Get your skill-gap report
+
+```bash
+uv run python main.py report data/cvs/cv01.pdf "data scientist"
+```
+
+Available roles: `data scientist`, `data analyst`, `software engineer`, `ml engineer`, `ux designer` (written in quotes; case does not matter).
+
+More examples:
+
+```bash
+# entry-level and internship postings only (they exist in the secondary dataset only)
+uv run python main.py report data/cvs/cv01.pdf "data scientist" --source secondary --level entry internship
+
+# only UK postings, compared against the top 10 tools
+uv run python main.py report data/cvs/cv01.pdf "software engineer" --country "United Kingdom" --top 10
+
+# debugging: which words in the CV matched which tool
+uv run python main.py report data/cvs/cv01.pdf "data scientist" --explain
+
+# debugging: print the text the PDF reader extracted (includes your contact details, don't paste it anywhere)
+uv run python main.py report data/cvs/cv01.pdf "data scientist" --show-text
+```
+
+All options (also shown by `uv run python main.py report --help`):
+
+| Option | Default | What it does |
+|---|---|---|
+| `--source primary` / `secondary` | `primary` | `primary` = 1.3M postings, Jan 2024, US/UK/CA/AU. `secondary` = 124K postings, Apr 2024, US only, but with entry level + internships |
+| `--level ...` | all levels | one or more of `entry`, `internship`, `associate`, `mid-senior`, `director`, `executive` |
+| `--country "..."` | all countries | e.g. `"United States"`, `"United Kingdom"`, `"Canada"`, `"Australia"` (primary only) |
+| `--top N` | `15` | compare against the N most-demanded tools for the role |
+| `--min-share X` | `0.05` | ignore tools that appear in fewer than this share of postings (0.05 = 5%) |
+| `--explain` | off | show which words in the CV matched which tool |
+| `--show-text` | off | print the text extracted from the CV |
+
+### 5. How to read the report
+
+- **`in 55% of postings (52%-58%)`**: SQL is mentioned in 55% of the postings for this role. The range in brackets is a 95% confidence interval: the fewer postings, the wider it gets. Below 100 postings the report warns you.
+- **`Your CV covers 42%`**: demand-weighted coverage of the top tools, so missing a tool that is in 80% of postings costs much more than missing one that is in 10%.
+- **`Also on your CV, outside the top 15`**: tools you have that are less common for this role, with their share.
+- The report judges **what the CV says**, not what you know. If you know SQL but never mention it, SQL shows up as missing, which is useful to know too.
+
+### Tests and code
+
+```bash
+uv run pytest            # all tests; the ones needing data/onet/ are skipped if it's missing
+uv run pytest -k matcher # only the matcher tests
+```
+
+Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `tests/test_matcher.py` first, then fix `skillradar/matcher.py`, then rebuild (step 2).
+
+| File | What it does |
 |---|---|
-| `skillradar/matcher.py` | O*NET keyword matcher, used for CVs, posting text and dataset labels |
+| `main.py` | the command line: `build` and `report` |
+| `skillradar/matcher.py` | O*NET keyword matcher, used for CVs, posting text and dataset labels. Hand-tuned lists (`CASE_SENSITIVE`, `MANUAL_DROP`, ...) are at the top |
 | `skillradar/cv_parser.py` | CV file → clean text |
-| `skillradar/demand.py` | `build`: postings → `data/processed/posting_tools_<source>.csv`; query: % of postings per tool for a role (with 95% Wilson interval) |
+| `skillradar/demand.py` | `build`: postings → `data/processed/posting_tools_<source>.csv`; query: % of postings per tool for a role (with 95% Wilson interval). Role title patterns are in `ROLE_PATTERNS` |
 | `skillradar/report.py` | CV tools vs. role demand → ranked missing skills + demand-weighted coverage |
 
 ## How does it work?
@@ -54,7 +134,7 @@ Run the tests with `uv run pytest`.
 1. Skills are extracted from a free-text CV and normalized against a structured skill taxonomy (O*NET). We use the ~300 tools O*NET flags as **Hot Technology** or **In Demand**, i.e. the tools employers actually ask for.
 2. The same matcher runs on the full text of real job postings for the target role, so both sides use the same skill names.
 3. For each skill we compute **demand = % of postings for that role that mention it** (counted once per posting).
-4. Missing skills are ranked by demand, with O*NET's Hot Technology / In Demand flag shown next to them.
+4. Missing skills are ranked by demand, with O*NET's Hot Technology / In Demand flag shown next to them, and the CV gets a demand-weighted coverage score.
 
 > [!IMPORTANT]
 > We're also testing whether the taxonomy-normalization step is actually worth its complexity, vs. simple keyword matching. See [`draft_notes/lighting_presentation_W3.md`](draft_notes/lighting_presentation_W3.md) for why this is a real design question and not just an implementation detail.
@@ -71,6 +151,8 @@ Expected layout after downloading:
 
 ```
 data/
+├── cvs/                           # your own test CVs (cv01.pdf, ...), never committed
+├── processed/                     # created by `main.py build`
 ├── kagglev2/                      # 1. primary job postings
 │   ├── linkedin_job_postings.csv
 │   ├── job_skills.csv

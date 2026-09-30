@@ -32,7 +32,7 @@ def test_missing_ranked_by_demand_and_coverage_weighted():
     assert rep.missing["tool"].tolist() == ["Python", "Tableau"]
     assert rep.have["tool"].tolist() == ["SQL"]
     assert rep.coverage == pytest.approx(0.6 / (0.8 + 0.6 + 0.2))
-    assert rep.other_cv_tools == ["Figma"]                    # on CV, not common for role
+    assert rep.other_cv_tools == [("Figma", 0.0)]             # on CV, not common for role
     assert "Rare" not in rep.missing["tool"].tolist()          # below min_share
 
 
@@ -55,3 +55,10 @@ def test_small_sample_and_empty():
     empty = demand_from_sets([])
     empty.attrs["role"] = "ux designer"
     assert "No postings" in format_report(build_report(set(), empty))
+
+
+def test_common_cv_tool_outside_top_is_not_lost():
+    # SQL (60%) is common but outside top=1, it must still be reported (bug found on a real CV: Git vanished)
+    rep = build_report({"SQL"}, _demand(), top=1)
+    assert rep.other_cv_tools == [("SQL", 0.6)]
+    assert "SQL (60%)" in format_report(rep)
