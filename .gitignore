@@ -1,5 +1,9 @@
 data/
-.venv/__pycache__/
+.venv/
+__pycache__/
 *.pyc
 .DS_Store
 .pytest_cache/
+*.pdf
+*.docx
+!docs/**/*.pdf
