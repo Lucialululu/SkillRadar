@@ -1,7 +1,7 @@
 [project]
 name = "skillradar"
 version = "0.1.0"
-description = "Add your description here"
+description = "CV-to-job-market skill-gap tool for job-seeking students (DTU 02830)"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -10,3 +10,17 @@ dependencies = [
     "numpy>=2.5.3",
     "pandas>=3.0.6",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+# makes `uv sync` install skillradar/ as an editable package,
+# so notebooks in preprocessing/ can do `from skillradar.matcher import KeywordMatcher`
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
