@@ -40,7 +40,7 @@ class SkillGapReport:
     coverage: float                                   # share-weighted, 0..1
     missing: pd.DataFrame                             # top tools the CV lacks, by demand
     have: pd.DataFrame                                # top tools the CV has
-    other_cv_tools: list[str] = field(default_factory=list)   # on CV, rare for this role
+    other_cv_tools: list[tuple[str, float]] = field(default_factory=list)  # on CV, outside the top list
     note: str = ""
 
     @property
@@ -63,8 +63,10 @@ def build_report(cv_tools: set[str], demand: pd.DataFrame, top: int = 15,
     total = ranked["share"].sum()
     coverage = float(ranked.loc[ranked["on_cv"], "share"].sum() / total) if total else 0.0
 
-    common = set(demand.loc[demand["share"] >= min_share, "tool"])
-    other = sorted((t for t in cv_tools if t not in common), key=display_name)
+    # every CV tool that is not in the compared top list, with its share (0 if never seen)
+    shares = demand.set_index("tool")["share"]
+    other = sorted(((t, float(shares.get(t, 0.0))) for t in cv_tools if t not in set(ranked["tool"])),
+                   key=lambda x: (-x[1], display_name(x[0])))
 
     return SkillGapReport(
         role=role, n_postings=n, top=top, coverage=coverage,
@@ -99,6 +101,6 @@ def format_report(rep: SkillGapReport) -> str:
     lines.append("\nAlready on your CV:")
     lines += [row(r, "have") for _, r in rep.have.iterrows()] or ["  none of the top tools"]
     if rep.other_cv_tools:
-        lines.append("\nAlso on your CV (rare in these postings): "
-                     + ", ".join(display_name(t) for t in rep.other_cv_tools))
+        lines.append(f"\nAlso on your CV, outside the top {rep.top} for this role: "
+                     + ", ".join(f"{display_name(t)} ({sh:.0%})" for t, sh in rep.other_cv_tools))
     return "\n".join(lines)
