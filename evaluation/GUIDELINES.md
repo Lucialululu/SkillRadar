@@ -6,9 +6,14 @@ a label file.
 
 ## Setup
 
-1. `uv run python evaluation/sample_postings.py` (once; commit `manifest.csv`)
-2. Copy `labels_TEMPLATE.csv` to `labels_<yourname>.csv` and fill in `labeller` with your name.
+1. ~~`uv run python evaluation/sample_postings.py`~~ Done on 28 Oct (40 postings, 10 dev / 30 test,
+   seed 42; `manifest.csv` is committed). Do not run it again: the sample is fixed.
+2. Copy the template and fill in `labeller` with your name:
+
+       cp evaluation/labels_TEMPLATE.csv evaluation/labels_<yourname>.csv
+
 3. Open `evaluation/items/post_XXX.txt` and write the tools in `true_tools`.
+   Rows without a labeller are ignored, so a half-finished file can already be checked and evaluated.
 4. CVs: add rows yourself, `item_id` = the CV file name without extension (`cv01`, ...),
    `split` = `dev` for the CVs we already used while building (cv01), `test` for new ones.
    The CV stays in `data/cvs/`, only its tools go in the label file.
@@ -35,8 +40,9 @@ BI tools, office software, ML frameworks, version control, etc.
     Python; SQL; AWS; Power BI; scikit-learn; Jupyter
 
 `evaluate.py` maps these onto O*NET names (SQL -> "Structured query language SQL").
-Run `uv run python evaluation/evaluate.py --check labels_<you>.csv` to see which names it could
-not map: fix typos, leave real out-of-vocabulary tools as they are.
+Check which names it could not map: fix typos, leave real out-of-vocabulary tools as they are.
+
+    uv run python evaluation/evaluate.py --check evaluation/labels_<yourname>.csv
 
 `notes`: anything unsure ("'Spark' could be the company name here").
 
@@ -44,7 +50,44 @@ not map: fix typos, leave real out-of-vocabulary tools as they are.
 
 Both of us label the same **15 test postings** independently (don't discuss them first), then:
 
-    uv run python evaluation/evaluate.py --agreement labels_A.csv labels_B.csv
+    uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
 
-Afterwards we discuss the disagreements and write one agreed file `labels_gold.csv`, which is what
-the evaluation uses. The agreement numbers go in the report.
+Afterwards we discuss the disagreements and write one agreed file `evaluation/labels_gold.csv`,
+which is what the evaluation uses. The agreement numbers go in the report.
+
+## Running the evaluation (in this order)
+
+1. **Label the 10 dev postings**, then check the names (see Format above).
+2. **Dev numbers, to look and debug.** Use your own label file and the dev split. `--errors` lists
+   every false positive and miss, with the word that fired:
+
+       uv run python evaluation/evaluate.py evaluation/labels_<yourname>.csv --split dev --matcher full exact vendor acronym
+       uv run python evaluation/evaluate.py evaluation/labels_<yourname>.csv --split dev --matcher full --errors
+
+3. **Both label the test postings**, then agreement, then `labels_gold.csv` (see Agreement above).
+4. **The ablation on the test split (report this once).** Every normalisation step is compared
+   against the full keyword matcher on the same postings:
+
+       uv run python evaluation/evaluate.py evaluation/labels_gold.csv --matcher full exact vendor acronym
+
+5. **Week 9: the main result.** The LLM and the hybrid compared against the keyword matcher.
+   `<llm>` and `<hybrid>` are placeholders until `skillradar/llm_matcher.py` exists:
+
+       uv run python evaluation/evaluate.py evaluation/labels_gold.csv --matcher full <llm> <hybrid> --baseline full
+
+### How to read the output
+
+- **Main table:** precision, recall and F1 per matcher, each with a 95% interval (bootstrap over items).
+  "recall (all)" also counts out-of-vocabulary tools as missed.
+- **Paired table:** each matcher minus the baseline, on the same postings. If the interval of
+  **ΔF1 excludes 0**, the difference is real on this kind of data, even when the separate intervals
+  in the main table overlap. "items better / worse / same" counts on how many postings the matcher
+  makes fewer or more mistakes than the baseline.
+
+### Rules that keep the evaluation honest
+
+- **Dev is for looking, test is for reporting.** Do not open the matcher's output on the 30 test
+  postings until `labels_gold.csv` is finished. Then run the test split and report that number.
+- **Do not change the matcher after seeing test results.** The evaluated version is the tag
+  `matcher-v1-frozen`. If the dev set shows a bug worth fixing, fix it *before* labelling the test
+  set, add a test case, rebuild, and make a new tag (`matcher-v2-frozen`).
