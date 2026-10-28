@@ -79,8 +79,15 @@ CASE_SENSITIVE = {
 }
 
 # aliases we removed after looking at real postings (write them as they appear,
-# e.g. "Go" or "google"); filled in from suggest_drops() + a human decision
-MANUAL_DROP: set[str] = set()
+# e.g. "Go" or "google"); filled in from suggest_drops() + a human decision.
+# Decided 28 Oct 2026 from scripts/alias_snippets.py (10 snippets per alias and dataset):
+#   Google   -> drop. 0 of 20 meant a tool called "Google": employer ("At Google"), verb
+#               ("search ... in Google"), or the start of a product name (Google Cloud, Test,
+#               Play, Slides). Products in our vocabulary keep their own alias (Google Analytics,
+#               Google Sheets, Google Ads, ...).
+#   Facebook -> drop. 17 of 20 were "follow us on Facebook" or the company; 3 were ad platforms.
+#   C, Go    -> keep. 19/20 and 20/20 were the programming language.
+MANUAL_DROP: set[str] = {"Google", "Facebook"}
 
 MAX_NGRAM = 8
 
@@ -214,6 +221,26 @@ class KeywordMatcher:
     def extract_tools(self, text: str) -> set[str]:
         """Set of O*NET tool names mentioned in text (each tool counted once)."""
         return set(self.explain(text).values())
+
+    def evidence(self, text: str, window: int = 45) -> dict[str, str]:
+        """{tool: the text around its first match}, for showing users *why* a tool was found.
+        Same matching rules as explain(); the matched words are wrapped in **...**."""
+        if not isinstance(text, str):
+            return {}
+        spans = [(m.group(0), m.start(), m.end()) for m in TOKEN.finditer(text)]
+        out: dict[str, tuple[int, str]] = {}
+        for n in range(self.max_n, 0, -1):                 # longest match first
+            for i in range(len(spans) - n + 1):
+                words = [s[0] for s in spans[i:i + n]]
+                for g in (" ".join(words).lower(), " ".join(words)):
+                    tool = self.alias_to_tool.get(g)
+                    if tool and (tool not in out or spans[i][1] < out[tool][0]):
+                        s, e = spans[i][1], spans[i + n - 1][2]
+                        lo, hi = max(0, s - window), min(len(text), e + window)
+                        snip = (("…" if lo else "") + text[lo:s] + "**" + text[s:e] + "**"
+                                + text[e:hi] + ("…" if hi < len(text) else ""))
+                        out[tool] = (s, " ".join(snip.split()))
+        return {t: v[1] for t, v in out.items()}
 
     # -- matching the dataset's skill labels ------------------------------------
 

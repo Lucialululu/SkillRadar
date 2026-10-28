@@ -7,3 +7,6 @@ __pycache__/
 *.pdf
 *.docx
 !docs/**/*.pdf
+
+# evaluation: posting texts are not ours to redistribute (labels + manifest ARE committed)
+evaluation/items/

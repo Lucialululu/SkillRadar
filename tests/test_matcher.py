@@ -75,6 +75,30 @@ def test_is_abbrev():
     assert not is_abbrev("XYZ", ["Structured", "query", "language"])
 
 
+def test_manual_drop_decisions_28_oct():
+    from skillradar.matcher import MANUAL_DROP
+    assert MANUAL_DROP == {"Google", "Facebook"}          # see the comment in matcher.py for the evidence
+
+
+def test_default_matcher_drops_company_names_but_keeps_products():
+    sw = pd.DataFrame([("Google", "Y", "N"), ("Facebook", "Y", "N"), ("Google Analytics", "Y", "N"),
+                       ("C", "Y", "N"), ("Go", "Y", "N")],
+                      columns=["Workplace Example", "Hot Technology", "In Demand"])
+    m = KeywordMatcher(sw)                                   # default MANUAL_DROP
+    text = "At Google we track campaigns in Google Analytics. Follow us on Facebook. Code in C and Go."
+    assert m.extract_tools(text) == {"Google Analytics", "C", "Go"}
+
+
+def test_evidence_shows_where_each_tool_was_found(m):
+    text = "Built ETL in Python.\nDashboards in Microsoft Power BI and Excel; R & D team; no Go-to tools."
+    ev = m.evidence(text, window=10)
+    assert set(ev) == set(m.extract_tools(text))
+    assert "**Python**" in ev["Python"]
+    assert "**Microsoft Power BI**" in ev["Microsoft Power BI"]      # longest alias is shown
+    assert "\n" not in ev["Microsoft Excel"]
+    assert m.evidence(None) == {}
+
+
 def test_is_generic():
     assert is_generic("Payroll software")
     assert not is_generic("Microsoft Power BI")
