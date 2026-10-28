@@ -75,6 +75,16 @@ def test_is_abbrev():
     assert not is_abbrev("XYZ", ["Structured", "query", "language"])
 
 
+def test_evidence_shows_where_each_tool_was_found(m):
+    text = "Built ETL in Python.\nDashboards in Microsoft Power BI and Excel; R & D team; no Go-to tools."
+    ev = m.evidence(text, window=10)
+    assert set(ev) == set(m.extract_tools(text))
+    assert "**Python**" in ev["Python"]
+    assert "**Microsoft Power BI**" in ev["Microsoft Power BI"]      # longest alias is shown
+    assert "\n" not in ev["Microsoft Excel"]
+    assert m.evidence(None) == {}
+
+
 def test_is_generic():
     assert is_generic("Payroll software")
     assert not is_generic("Microsoft Power BI")

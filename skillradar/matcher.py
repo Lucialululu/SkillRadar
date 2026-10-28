@@ -215,6 +215,26 @@ class KeywordMatcher:
         """Set of O*NET tool names mentioned in text (each tool counted once)."""
         return set(self.explain(text).values())
 
+    def evidence(self, text: str, window: int = 45) -> dict[str, str]:
+        """{tool: the text around its first match}, for showing users *why* a tool was found.
+        Same matching rules as explain(); the matched words are wrapped in **...**."""
+        if not isinstance(text, str):
+            return {}
+        spans = [(m.group(0), m.start(), m.end()) for m in TOKEN.finditer(text)]
+        out: dict[str, tuple[int, str]] = {}
+        for n in range(self.max_n, 0, -1):                 # longest match first
+            for i in range(len(spans) - n + 1):
+                words = [s[0] for s in spans[i:i + n]]
+                for g in (" ".join(words).lower(), " ".join(words)):
+                    tool = self.alias_to_tool.get(g)
+                    if tool and (tool not in out or spans[i][1] < out[tool][0]):
+                        s, e = spans[i][1], spans[i + n - 1][2]
+                        lo, hi = max(0, s - window), min(len(text), e + window)
+                        snip = (("…" if lo else "") + text[lo:s] + "**" + text[s:e] + "**"
+                                + text[e:hi] + ("…" if hi < len(text) else ""))
+                        out[tool] = (s, " ".join(snip.split()))
+        return {t: v[1] for t, v in out.items()}
+
     # -- matching the dataset's skill labels ------------------------------------
 
     def extract_tools_from_labels(self, labels: Iterable[str]) -> set[str]:

@@ -10,6 +10,7 @@ Usage:
 """
 from __future__ import annotations
 
+import io
 import re
 import unicodedata
 from pathlib import Path
@@ -26,26 +27,32 @@ def read_cv(path: str | Path) -> str:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(path)
-    suffix = path.suffix.lower()
+    return read_cv_bytes(path.read_bytes(), path.name)
+
+
+def read_cv_bytes(data: bytes, filename: str) -> str:
+    """Same as read_cv, but for an uploaded file that only exists in memory (web app).
+    The format is taken from the filename's extension. Nothing is written to disk."""
+    suffix = Path(filename).suffix.lower()
     if suffix == ".pdf":
-        raw = _read_pdf(path)
+        raw = _read_pdf(io.BytesIO(data))
     elif suffix == ".docx":
-        raw = _read_docx(path)
+        raw = _read_docx(io.BytesIO(data))
     elif suffix in {".txt", ".md"}:
-        raw = path.read_text(encoding="utf-8", errors="replace")
+        raw = data.decode("utf-8", errors="replace")
     else:
         raise ValueError(f"Unsupported CV format '{suffix}'. Use one of: {', '.join(sorted(SUPPORTED))}")
 
     text = clean_text(raw)
     if len(text) < 50:
         raise ValueError(
-            f"Only {len(text)} characters of text found in {path.name}. "
+            f"Only {len(text)} characters of text found in {Path(filename).name}. "
             "Is it a scanned image? Export the CV as a text-based PDF or .docx instead."
         )
     return text
 
 
-def _read_pdf(path: Path) -> str:
+def _read_pdf(path) -> str:
     import pdfplumber
 
     pages = []
@@ -56,7 +63,7 @@ def _read_pdf(path: Path) -> str:
     return "\n".join(pages)
 
 
-def _read_docx(path: Path) -> str:
+def _read_docx(path) -> str:
     import docx  # python-docx
 
     doc = docx.Document(path)

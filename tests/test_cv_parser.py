@@ -1,7 +1,7 @@
 """Tests for skillradar.cv_parser."""
 import pytest
 
-from skillradar.cv_parser import clean_text, read_cv
+from skillradar.cv_parser import clean_text, read_cv, read_cv_bytes
 
 LONG = "Skills: Python, SQL, Docker. " * 3   # read_cv rejects texts under 50 characters
 
@@ -39,6 +39,24 @@ def test_read_pdf(tmp_path):
     c.save()
     text = read_cv(tmp_path / "cv.pdf")
     assert "scikit-learn" in text and "Docker" in text
+
+
+def test_read_cv_bytes_matches_file_and_writes_nothing(tmp_path, monkeypatch):
+    docx = pytest.importorskip("docx")
+    d = docx.Document()
+    d.add_paragraph("Jane Doe. Skills: Python, SQL, Docker, Tableau and some more text here.")
+    d.save(tmp_path / "cv.docx")
+    data = (tmp_path / "cv.docx").read_bytes()
+    monkeypatch.chdir(tmp_path)
+    before = set(tmp_path.iterdir())
+    assert read_cv_bytes(data, "upload.docx") == read_cv(tmp_path / "cv.docx")
+    assert "Docker" in read_cv_bytes(LONG.encode(), "cv.txt")
+    assert set(tmp_path.iterdir()) == before        # GDPR: no temp files
+
+
+def test_read_cv_bytes_errors():
+    with pytest.raises(ValueError, match="Unsupported"):
+        read_cv_bytes(LONG.encode(), "cv.odt")
 
 
 def test_errors(tmp_path):

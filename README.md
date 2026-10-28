@@ -10,7 +10,7 @@ SkillRadar: A CV-to-job-market skill-gap tool for job-seeking students, 02830 Ad
 **Aim:** we aim to create a web prototype where a job-seeking student uploads their CV, picks a target role, and gets a ranked list of the tools they are missing, with evidence from real job postings.
 
 ### Goal 1: Extract tools reliably from CVs and job postings
-Map free text (CVs and postings) onto one shared vocabulary (O*NET Hot Technology / In Demand tools), so both sides can be compared tool by tool.
+Map free text (CVs and postings) onto one shared vocabulary of tools and technologies (O*NET Hot Technology / In Demand), so both sides can be compared tool by tool. In this project, a *skill* means a named tool you can use.
 
 **How we test it**
 
@@ -18,9 +18,11 @@ Map free text (CVs and postings) onto one shared vocabulary (O*NET Hot Technolog
 
 > Precision and recall per side (postings, CVs).
 
-> Two of us label the same around 15 postings independently  agreement (Cohen's kappa), to show the labels themselves are reliable.
+> Two of us label the same 15 postings independently → agreement (F1 between labellers, Cohen's kappa), to show the labels themselves are reliable.
 
 > Ablation: how much each normalisation step adds (exact O*NET names → + vendor stripping → + acronyms → + case rules).
+
+> Method comparison: keyword matcher vs. a pretrained LLM vs. a hybrid (keyword proposes candidates, the LLM verifies them in context), on the same held-out labels.
 
 > Target (set before measuring): precision ≥ 0.85 and recall ≥ 0.75 on held-out postings.
 
@@ -57,6 +59,8 @@ A web interface: upload CV → choose role → skill-gap report (missing tools r
 ### Not our goals (delimitation)
 
 > **No trends over time.** Both datasets are single snapshots (Jan and Apr 2024). Our January versus April comparison showed differences between the scrapers, not the market, so we make no rising/falling claims.
+
+> **Tools only, not skills in general.** "Machine learning", "statistics" or soft skills are not in our vocabulary. Coverage means coverage of tool demand.
 
 > **The report judges what the CV says,** not what the person knows.
 
@@ -171,6 +175,25 @@ All options (also shown by `uv run python main.py report --help`):
 - **`Also on your CV, outside the top 15`**: tools you have that are less common for this role, with their share.
 - The report judges **what the CV says**, not what you know. If you know SQL but never mention it, SQL shows up as missing, which is useful to know too.
 
+### Web app
+
+```bash
+uv run streamlit run app.py      # opens in the browser; needs the build from step 2 (both sources for all features)
+```
+
+Upload a CV → pick a role → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added (for the peer trial notes; nothing is saved).
+
+### Evaluation (Goal 1) and analysis (Goal 2)
+
+```bash
+uv run python scripts/alias_snippets.py                  # evidence for MANUAL_DROP decisions (Google, Facebook, C, Go)
+uv run python evaluation/sample_postings.py              # once: 40 postings for blind labelling, see evaluation/GUIDELINES.md
+uv run python evaluation/evaluate.py --check evaluation/labels_<you>.csv
+uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
+uv run python evaluation/evaluate.py evaluation/labels_gold.csv          # P/R for all ablation steps, test split
+uv run python analysis/goal2.py                          # replication, rank stability, entry vs senior → analysis/results/
+```
+
 ### Tests and code
 
 ```bash
@@ -187,6 +210,12 @@ Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `
 | `skillradar/cv_parser.py` | CV file → clean text |
 | `skillradar/demand.py` | `build`: postings → `data/processed/posting_tools_<source>.csv`; query: % of postings per tool for a role (with 95% Wilson interval). Role title patterns are in `ROLE_PATTERNS` |
 | `skillradar/report.py` | CV tools vs. role demand → ranked missing skills + demand-weighted coverage |
+| `skillradar/variants.py` | ablation variants of the matcher (exact → vendor → acronym → full) |
+| `skillradar/robustness.py` | Goal 2 statistics: replication (Spearman + bootstrap), rank intervals, entry vs senior (z-test + Benjamini-Hochberg) |
+| `app.py` | Streamlit web prototype |
+| `evaluation/` | blind sampling, labelling guidelines, `evaluate.py` (precision/recall, agreement) |
+| `analysis/goal2.py` | Goal 2 tables and figures |
+| `scripts/alias_snippets.py` | shows where suspicious aliases fire, for MANUAL_DROP decisions |
 
 ## How does it work?
 
@@ -196,10 +225,10 @@ Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `
 4. Missing skills are ranked by demand, with O*NET's Hot Technology / In Demand flag shown next to them, and the CV gets a demand-weighted coverage score.
 
 > [!IMPORTANT]
-> We're also testing whether the taxonomy-normalization step is actually worth its complexity, vs. simple keyword matching. See [`draft_notes/lighting_presentation_W3.md`](draft_notes/lighting_presentation_W3.md) for why this is a real design question and not just an implementation detail.
+> We test whether each normalisation step is worth it (ablation), and whether a pretrained LLM that reads the context does better than keyword matching (method comparison). O*NET stays the vocabulary in both cases: the taxonomy is *what* we map to, the matcher or model is *how*.
 
 > [!WARNING]
-> **"Trending up or down" is on hold.** The original plan was to measure how demand changes over time, but both job-posting datasets turned out to be **single snapshots** (a few days to two weeks of scraping each), so there is no time series to measure a trend on. Comparing the two snapshots (January vs. April 2024) mostly shows differences between the two scrapers, not the market. We are redefining this part: currently O*NET's Hot Technology / In Demand flags as the demand signal, plus a stability test (do the skill rankings for a role hold across both snapshots?). See `preprocessing/data_inspection_primary.ipynb`, section 5.
+> **No "trending up or down".** Both job-posting datasets are **single snapshots** (a few days to two weeks of scraping each), so there is no time series. Comparing them (January vs. April 2024) mostly shows differences between the two scrapers: for software engineers 14 of the 15 significant changes go down. Instead, Goal 2 tests whether the *current* ranking is robust (it replicates across both datasets) and how it differs between entry-level and senior postings. See `preprocessing/data_inspection_primary.ipynb` section 5 and `analysis/goal2.py`.
 
 ## Data requirements
 
