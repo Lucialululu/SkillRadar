@@ -140,7 +140,7 @@ This runs the skill matcher over every posting for our five roles once and saves
 uv run streamlit run app.py      # opens in the browser; needs step 2 (both sources for all features)
 ```
 
-Upload a CV (or tick the example CV) → pick a role and dataset → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges, coverage and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added, for the peer-trial notes; nothing is saved.
+Four steps, styled after the Figma design (`skillradar/ui.py`, `.streamlit/config.toml`): upload a CV (or use the example CV) → pick a role and dataset → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges, coverage and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added, for the peer-trial notes; nothing is saved.
 
 The steps below are the **command-line version**, which we use for development and debugging.
 
@@ -230,7 +230,8 @@ Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `
 | `skillradar/report.py` | CV tools vs. role demand → ranked missing skills + demand-weighted coverage |
 | `skillradar/variants.py` | ablation variants of the matcher (exact → vendor → acronym → full) |
 | `skillradar/robustness.py` | Goal 2 statistics: replication (Spearman + bootstrap), rank intervals, entry vs senior (z-test + Benjamini-Hochberg) |
-| `app.py` | Streamlit web prototype |
+| `app.py` | Streamlit web prototype: the 4-step flow (Upload → Role → Check → Report) |
+| `skillradar/ui.py` | the app's look: CSS and small HTML pieces (step bar, evidence rows, bars with 95% ticks, coverage ring); all CV text is escaped |
 | `evaluation/` | blind sampling, labelling guidelines, `evaluate.py` (precision/recall, agreement) |
 | `analysis/goal2.py` | Goal 2 tables and figures |
 | `scripts/alias_snippets.py` | shows where suspicious aliases fire, for MANUAL_DROP decisions |
