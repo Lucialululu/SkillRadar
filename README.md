@@ -14,7 +14,7 @@ Map free text (CVs and postings) onto one shared vocabulary of tools and technol
 
 **How we test it**
 
-> Hand-label tools in around 40 postings and 10 CVs *before* running the matcher. Tune on a small dev set (10 postings, 2 CVs), report results only on the held-out rest.
+> Hand-label tools in 40 data-scientist postings (10 dev / 30 test, drawn once with seed 42, see `evaluation/manifest.csv`) and 6–10 CVs *before* running the matcher. Report results only on the held-out test items, with the matcher frozen beforehand (`git tag matcher-v1-frozen`).
 
 > Precision and recall per side (postings, CVs).
 
@@ -38,17 +38,19 @@ For each role, the share of postings that mention each tool, with 95% confidence
 > Entry-level vs. mid-senior postings within the same dataset: two-proportion tests per tool, corrected for multiple comparisons.
 
 ### Goal 3: A prototype students can use and find useful
-A web interface: upload CV → choose role → skill-gap report (missing tools ranked by demand, coverage score, entry-level vs. senior view).
+A web interface: upload CV → choose role → check and correct the tools we found → skill-gap report (missing tools ranked by demand, 95% ranges, coverage score, entry-level vs. senior view).
 
 **How we test it**
 
-> Peer trial with 8–12 job-seeking students using their own CV, with think-aloud on fixed tasks.
+> Pilot with 2 classmates, then a peer trial with 6–8 job-seeking students using their own CV, with think-aloud on fixed tasks.
 
 > Task success: can they get and read a report without help?
 
 > Perceived accuracy: for each "missing" tool, do they agree it is really missing from their CV?
 
-> Usefulness: short questionnaire (Likert) on whether the report would change what they learn or apply for next.
+> Usefulness and trust: short questionnaire (Likert) on whether the report would change what they learn or apply for next, and whether they would act on it.
+
+> Correction rate: how many found tools users remove (false positives) or add (misses) in the confirm step. A second, real-world measurement for Goal 1.
 
 ### Stretch goals (only if Goals 1–3 are done)
 
@@ -68,32 +70,42 @@ A web interface: upload CV → choose role → skill-gap report (missing tools r
 
 > No salary prediction, no application automation, no hiring guarantee.
 
+## Results so far (week 8)
+
+| Goal | Status | Result |
+|---|---|---|
+| 1 · Extraction | test set drawn, labelling in progress | Indirect check only so far: our text matcher agrees with the primary dataset's own skill labels within ~3 points for 23 of the top 25 data-scientist tools |
+| 2 · Robust demand | ✅ analysed | Rankings replicate across the two datasets: Spearman ρ = 0.87 (data analyst), 0.87 (software engineer), 0.80 (data scientist), 0.82 (ML engineer, small sample), 0.63 (UX designer). Top 3–7 tools per role have stable ranks. Few entry vs. senior differences survive correction; clearest: data-analyst entry ads ask for SQL far less often (36% vs 66%) |
+| 3 · Prototype | ✅ v1 built, user tests pending | `app.py` |
+
+Data-quality fixes that changed results: **duplicate ads** (the same job posted in several cities: 4,049 in the primary and 342 in the secondary target-role postings) are now removed; a **role-pattern bug** put building/circuit design jobs under "ux designer" (31%); **Google** and **Facebook** were dropped as aliases after checking real postings (company names, not tools). Full tables: `analysis/results/`, numbers and decisions: [`TODO.md`](TODO.md).
+
 ## What is this?
 
 Every student job-hunting for an internship or first grad role runs into the same wall: it's hard to know, in concrete terms, which skills employers are actually asking for right now, whether your CV reflects that, and which gaps are actually worth closing before a deadline. LinkedIn's "skill match" needs a paid account and only compares you to one posting at a time. Generic CV checkers give vague advice.
 
-SkillRadar takes your CV and a target role, compares your skills against real, aggregated job-posting data for that role, and tells you what's missing, how common it is, and whether employers are flagging it as in demand.
+SkillRadar takes your CV and a target role, compares the tools on your CV against real, aggregated job-posting data for that role, and tells you what's missing, how common it is (with a 95% range), and how stable that ranking is.
 
 ```
-CV → extract & normalize skills → compare against job-postings data → rank missing skills by demand
+CV → extract tools → you check & correct them → compare with job-posting data for the role → missing tools ranked by demand
 ```
 
-**Example output** (data scientist, real numbers from the primary dataset, shortened):
+**Example output** (command-line version, data scientist, primary dataset after duplicate removal, shortened; the coverage figure depends on the CV):
 ```
-SkillRadar: data scientist (1,027 postings, LinkedIn Jan 2024)
+SkillRadar: data scientist (902 postings, LinkedIn Jan 2024)
 Your CV covers 42% of the demand for the top 15 tools.
 
 Missing, ranked by demand:
-  SQL           missing  in 55% of postings (52%-58%)    O*NET Hot Technology + In Demand
-  AWS           missing  in 25% of postings (22%-27%)    O*NET Hot Technology + In Demand
-  Tableau       missing  in 21% of postings (19%-24%)    O*NET Hot Technology + In Demand
+  SQL           missing  in 54% of postings (51%-57%)    O*NET Hot Technology + In Demand
+  AWS           missing  in 26% of postings (23%-29%)    O*NET Hot Technology + In Demand
+  Tableau       missing  in 22% of postings (19%-25%)    O*NET Hot Technology + In Demand
 
 Already on your CV:
-  Python        have     in 79% of postings (76%-81%)    O*NET Hot Technology + In Demand
+  Python        have     in 78% of postings (75%-81%)    O*NET Hot Technology + In Demand
 ```
 
 > [!NOTE]
-> This is a group project for DTU course 02830 (Advanced Project in Digital Media Engineering), not a polished consumer product. Scope, data, and everything below is very much a moving target as we build.
+> This is a 2-person group project for DTU course 02830 (Advanced Project in Digital Media Engineering), a research prototype, not a consumer product. Current status and plan: [`TODO.md`](TODO.md).
 
 ## How do I run the app?
 
@@ -112,14 +124,27 @@ You also need the data in `data/`, see [Data requirements](#data-requirements) b
 
 ```bash
 uv run python main.py build --source primary      # streams the 5 GB job_summary.csv, takes around 3-10 minutes
+uv run python main.py build --source secondary    # ~10 seconds; needed for entry-level data and Goal 2
 ```
 
-This runs the skill matcher over every posting for our five roles once and saves the result to `data/processed/posting_tools_<source>.csv` (a few MB, gitignored). Every report afterwards only reads that small file, which is why reports are instant.
+This runs the skill matcher over every posting for our five roles once and saves the result to `data/processed/posting_tools_<source>.csv` (a few MB, gitignored). Every report afterwards only reads that small file, which is why reports are instant. When the file is loaded, identical ad texts within a role are counted once (the same job is often posted in several cities).
 
 > [!WARNING]
 > **Rebuild after changing the matcher** (e.g. adding a word to `MANUAL_DROP` in `skillradar/matcher.py`). Otherwise the postings are still matched with the old rules while your CV is matched with the new ones.
+>
+> The Goal 1 evaluation uses the matcher as tagged `matcher-v1-frozen`. Changing the matcher after looking at test results would make the evaluation meaningless, so changes go into a new tag and the evaluation is rerun.
 
-### 3. Add your CV
+### 3. Run the web app (the prototype)
+
+```bash
+uv run streamlit run app.py      # opens in the browser; needs step 2 (both sources for all features)
+```
+
+Upload a CV (or tick the example CV) → pick a role and dataset → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges, coverage and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added, for the peer-trial notes; nothing is saved.
+
+The steps below are the **command-line version**, which we use for development and debugging.
+
+### 4. Add your CV
 
 Put CVs in `data/cvs/`. Like everything in `data/`, that folder is gitignored, so CVs never end up on GitHub.
 
@@ -132,7 +157,7 @@ Accepted formats: `.pdf`, `.docx`, `.txt`, `.md`. The PDF has to contain real te
 > [!IMPORTANT]
 > **Privacy:** use neutral names (`cv01.pdf`, `cv02.pdf`, ...), not people's names. Only use a friend's CV with their OK, keep it on your own laptop, and delete it after the project. The app only reads CVs into memory and never saves their text anywhere.
 
-### 4. Get your skill-gap report
+### 5. Get your skill-gap report
 
 ```bash
 uv run python main.py report data/cvs/cv01.pdf "data scientist"
@@ -168,30 +193,23 @@ All options (also shown by `uv run python main.py report --help`):
 | `--explain` | off | show which words in the CV matched which tool |
 | `--show-text` | off | print the text extracted from the CV |
 
-### 5. How to read the report
+### 6. How to read the report
 
 - **`in 55% of postings (52%-58%)`**: SQL is mentioned in 55% of the postings for this role. The range in brackets is a 95% confidence interval: the fewer postings, the wider it gets. Below 100 postings the report warns you.
 - **`Your CV covers 42%`**: demand-weighted coverage of the top tools, so missing a tool that is in 80% of postings costs much more than missing one that is in 10%.
 - **`Also on your CV, outside the top 15`**: tools you have that are less common for this role, with their share.
 - The report judges **what the CV says**, not what you know. If you know SQL but never mention it, SQL shows up as missing, which is useful to know too.
-
-### Web app
-
-```bash
-uv run streamlit run app.py      # opens in the browser; needs the build from step 2 (both sources for all features)
-```
-
-Upload a CV → pick a role → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added (for the peer trial notes; nothing is saved).
+- The O*NET flag column says "Hot Technology + In Demand" on almost every row, because our vocabulary only contains flagged tools. It will be removed.
 
 ### Evaluation (Goal 1) and analysis (Goal 2)
 
 ```bash
 uv run python scripts/alias_snippets.py                  # evidence for MANUAL_DROP decisions (Google, Facebook, C, Go)
-uv run python evaluation/sample_postings.py              # once: 40 postings for blind labelling, see evaluation/GUIDELINES.md
+uv run python evaluation/sample_postings.py              # done once (28 Oct); re-run only with --force, see evaluation/GUIDELINES.md
 uv run python evaluation/evaluate.py --check evaluation/labels_<you>.csv
 uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
 uv run python evaluation/evaluate.py evaluation/labels_gold.csv          # P/R for all ablation steps, test split
-uv run python analysis/goal2.py                          # replication, rank stability, entry vs senior → analysis/results/
+uv run python analysis/goal2.py > analysis/results/goal2_output.txt   # replication, rank stability, entry vs senior
 ```
 
 ### Tests and code
@@ -219,10 +237,10 @@ Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `
 
 ## How does it work?
 
-1. Skills are extracted from a free-text CV and normalized against a structured skill taxonomy (O*NET). We use the ~300 tools O*NET flags as **Hot Technology** or **In Demand**, i.e. the tools employers actually ask for.
-2. The same matcher runs on the full text of real job postings for the target role, so both sides use the same skill names.
-3. For each skill we compute **demand = % of postings for that role that mention it** (counted once per posting).
-4. Missing skills are ranked by demand, with O*NET's Hot Technology / In Demand flag shown next to them, and the CV gets a demand-weighted coverage score.
+1. Tools are extracted from a free-text CV and normalised onto a structured taxonomy (O*NET). We use the ~300 tools O*NET flags as **Hot Technology** or **In Demand**, i.e. the tools employers actually ask for. In the web app the user then checks and corrects this list (human in the loop).
+2. The same matcher runs on the full text of real job postings for the target role, so both sides use the same tool names. Reposted ads (identical text) are counted once.
+3. For each tool we compute **demand = % of postings for that role that mention it** (counted once per posting), with a 95% Wilson interval.
+4. Missing tools are ranked by demand, and the CV gets a demand-weighted coverage score. Goal 2 checks that the ranking replicates across two independent datasets.
 
 > [!IMPORTANT]
 > We test whether each normalisation step is worth it (ablation), and whether a pretrained LLM that reads the context does better than keyword matching (method comparison). O*NET stays the vocabulary in both cases: the taxonomy is *what* we map to, the matcher or model is *how*.
@@ -297,7 +315,7 @@ kaggle datasets download -d arshkon/linkedin-job-postings -p ./data/kaggle --unz
 ```
 
 We keep it for two things the primary dataset can't do:
-- **Replication:** checking that skill demand holds on an independent dataset. It does: for data scientists, Python / SQL / R / AWS / PyTorch land within ~2 percentage points across both datasets.
+- **Replication:** checking that tool demand holds on an independent dataset. It does for most roles: Spearman ρ of the tool ranking is 0.80–0.87 for data scientist, data analyst and software engineer (`analysis/goal2.py`).
 - **Entry level:** it includes `Entry level` (~37K) and `Internship` (~1.4K) postings, which matter for our actual users (students).
 
 > [!TIP]
@@ -358,9 +376,12 @@ https://www.onetcenter.org/license_db.html
 
 Both end with a **Findings → decisions** table.
 
+> [!NOTE]
+> The notebooks are exploration from weeks 1–5. They use the shared matcher (`skillradar/matcher.py`) but load the raw data directly, so they do not remove duplicate ads. The numbers to report come from `analysis/goal2.py` and `evaluation/evaluate.py`.
+
 ## Project docs
 
-More detail on motivation, goals, testing plan, risks, and the week-by-week plan lives in [`draft_notes/`](draft_notes/).
+Status, plan, decisions and open questions: [`TODO.md`](TODO.md). Earlier notes on motivation, risks and the lightning/premortem presentations: [`draft_notes/`](draft_notes/). Labelling rules: [`evaluation/GUIDELINES.md`](evaluation/GUIDELINES.md).
 
 > [!IMPORTANT]
 > Do not commit anything from `data/` to Git. All datasets are large and none is ours to redistribute — that's exactly why it's gitignored.
