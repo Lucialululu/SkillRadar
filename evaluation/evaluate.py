@@ -10,6 +10,9 @@ Goal 1 evaluation: how well do our matchers find the tools a human labelled?
     # later: any class with extract_tools(text) -> set[str], built as Class(software_df)
     uv run python evaluation/evaluate.py evaluation/labels_gold.csv --matcher full skillradar.llm_matcher:LLMMatcher
 
+    # the method comparison: everything against the keyword matcher, paired on the same items
+    uv run python evaluation/evaluate.py evaluation/labels_gold.csv --matcher full exact vendor acronym --baseline full
+
     # label files: which names could not be mapped onto O*NET? / agreement between two labellers
     uv run python evaluation/evaluate.py --check evaluation/labels_lucia.csv
     uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
@@ -18,7 +21,14 @@ Metrics, all micro-averaged over (item, tool) pairs:
     precision       found tools that are in the labels / all found tools
     recall (vocab)  labelled tools we found / labelled tools that exist in our O*NET vocabulary
     recall (all)    labelled tools we found / ALL labelled tools (out-of-vocabulary ones count as missed)
+    F1              harmonic mean of precision and recall (vocab)
 95% intervals: bootstrap over items (2,000 resamples), because tools within one item are not independent.
+
+Paired comparison (printed whenever more than one matcher is given): for each matcher vs the
+baseline, the DIFFERENCE in F1 / precision / recall with a 95% interval, a bootstrap p-value and a
+per-item count of where the matcher makes fewer / more errors. Both matchers are scored on the same
+resampled items, so easy-vs-hard postings cancel out. Use this, not overlapping separate intervals,
+to decide whether a method is better.
 """
 from __future__ import annotations
 
@@ -157,6 +167,56 @@ def bootstrap_ci(counts: list[Counts], metric: str, n_boot: int = 2000, seed: in
     return vals[int(0.025 * (len(vals) - 1))], vals[int(0.975 * (len(vals) - 1))]
 
 
+@dataclass
+class Paired:
+    diff: float                 # metric(B) - metric(A) on the full item set
+    lo: float                   # 95% bootstrap interval of the difference
+    hi: float
+    p: float                    # two-sided bootstrap p-value for "no difference"
+
+
+def paired_bootstrap(a: list[Counts], b: list[Counts], metric: str = "f1",
+                     n_boot: int = 2000, seed: int = 0) -> Paired:
+    """Difference metric(B) - metric(A) for two matchers scored on the SAME items.
+
+    Each resample draws item indices once and scores both matchers on that same draw,
+    so 'this sample happened to contain many hard postings' cancels out. That makes
+    the interval for the difference much narrower than comparing two separate intervals.
+    """
+    if len(a) != len(b):
+        raise ValueError("paired comparison needs the same items for both matchers")
+    nan = float("nan")
+    if not a:
+        return Paired(nan, nan, nan, nan)
+    diff = getattr(total(b), metric) - getattr(total(a), metric)
+    rng = random.Random(seed)
+    n = len(a)
+    diffs = []
+    for _ in range(n_boot):
+        idx = [rng.randrange(n) for _ in range(n)]
+        d = getattr(total([b[i] for i in idx]), metric) - getattr(total([a[i] for i in idx]), metric)
+        if d == d:                                  # drop NaN
+            diffs.append(d)
+    if not diffs:
+        return Paired(diff, nan, nan, nan)
+    diffs.sort()
+    lo, hi = diffs[int(0.025 * (len(diffs) - 1))], diffs[int(0.975 * (len(diffs) - 1))]
+    # share of resamples on the other side of zero, doubled (percentile bootstrap p-value)
+    below = sum(d <= 0 for d in diffs) / len(diffs)
+    above = sum(d >= 0 for d in diffs) / len(diffs)
+    p = min(1.0, 2 * min(below, above))
+    return Paired(diff, lo, hi, p)
+
+
+def item_wins(a: list[Counts], b: list[Counts]) -> tuple[int, int, int]:
+    """Per item: does B make fewer errors (false positives + in-vocabulary misses) than A?
+    Returns (B better, B worse, tie). Easy to explain next to the bootstrap numbers."""
+    err = lambda c: c.fp + c.fn_vocab
+    better = sum(err(y) < err(x) for x, y in zip(a, b))
+    worse = sum(err(y) > err(x) for x, y in zip(a, b))
+    return better, worse, len(a) - better - worse
+
+
 def kappa(a: list[bool], b: list[bool]) -> float:
     n = len(a)
     if n == 0:
@@ -204,23 +264,28 @@ def cmd_evaluate(args, software, norm):
         raise SystemExit(f"no labelled items in split '{args.split}'")
     texts = {i: item_text(i) for i in labels["item_id"]}
 
-    rows, details = [], {}
+    rows, details, scored = [], {}, {}
+    # per-side rows only add information when the labels contain both postings and CVs
+    sides = ["all", "posting", "cv"] if labels["side"].nunique() > 1 else ["all"]
     for spec in args.matcher:
         m = load_matcher(spec, software)
         per_item = {r.item_id: (m.extract_tools(texts[r.item_id]), r.truth, r.side) for r in labels.itertuples()}
         details[spec] = (m, per_item)
-        for side in ["all", "posting", "cv"]:
+        for side in sides:
             cs = [score_item(f, t) for f, t, s in per_item.values() if side == "all" or s == side]
+            scored[(spec, side)] = cs
             if not cs:
                 continue
             c = total(cs)
-            p_lo, p_hi = bootstrap_ci(cs, "precision")
-            r_lo, r_hi = bootstrap_ci(cs, "recall_vocab")
+            p_lo, p_hi = bootstrap_ci(cs, "precision", n_boot=args.n_boot)
+            r_lo, r_hi = bootstrap_ci(cs, "recall_vocab", n_boot=args.n_boot)
+            f_lo, f_hi = bootstrap_ci(cs, "f1", n_boot=args.n_boot)
             rows.append({
                 "matcher": spec, "side": side, "items": len(cs),
                 "precision": f"{fmt(c.precision)} ({fmt(p_lo)}–{fmt(p_hi)})",
                 "recall (vocab)": f"{fmt(c.recall_vocab)} ({fmt(r_lo)}–{fmt(r_hi)})",
-                "recall (all)": fmt(c.recall_all), "F1": fmt(c.f1),
+                "recall (all)": fmt(c.recall_all),
+                "F1": f"{fmt(c.f1)} ({fmt(f_lo)}–{fmt(f_hi)})",
                 "TP": c.tp, "FP": c.fp, "FN vocab": c.fn_vocab, "FN OOV": c.fn_oov,
             })
 
@@ -230,6 +295,33 @@ def cmd_evaluate(args, software, norm):
           f"({(labels['side'] == 'posting').sum()} postings, {(labels['side'] == 'cv').sum()} CVs) · "
           f"{n_truth} labelled tools, {n_oov} out of vocabulary ({n_oov / max(n_truth, 1):.0%})\n")
     print(md(pd.DataFrame(rows)))
+
+    # paired comparison: every other matcher against the baseline, on the same items
+    baseline = args.baseline or args.matcher[0]
+    if baseline not in args.matcher:
+        raise SystemExit(f"--baseline {baseline!r} must be one of the matchers in --matcher")
+    others = [s for s in args.matcher if s != baseline]
+    if others:
+        sd = lambda d: f"{d.diff:+.2f} ({d.lo:+.2f} to {d.hi:+.2f})" if d.diff == d.diff else "–"
+        prow = []
+        for spec in others:
+            for side in sides:
+                a, b = scored[(baseline, side)], scored[(spec, side)]
+                if not a:
+                    continue
+                f = paired_bootstrap(a, b, "f1", args.n_boot)
+                pr = paired_bootstrap(a, b, "precision", args.n_boot)
+                rc = paired_bootstrap(a, b, "recall_vocab", args.n_boot)
+                better, worse, tie = item_wins(a, b)
+                prow.append({
+                    "compared": f"{spec} − {baseline}", "side": side, "items": len(a),
+                    "ΔF1 (95% CI)": sd(f), "p": "–" if f.p != f.p else f"{f.p:.3f}",
+                    "Δprecision": sd(pr), "Δrecall (vocab)": sd(rc),
+                    "items better / worse / same": f"{better} / {worse} / {tie}",
+                })
+        print(f"\nPaired comparison against '{baseline}' (bootstrap over items, both matchers scored on the "
+              f"same resample; an interval that excludes 0 means a real difference on this kind of data)\n")
+        print(md(pd.DataFrame(prow)))
 
     if args.errors:
         for spec, (m, per_item) in details.items():
@@ -298,6 +390,8 @@ def main(argv=None):
     ap.add_argument("labels", nargs="?", help="label file, normally evaluation/labels_gold.csv")
     ap.add_argument("--matcher", nargs="+", default=STEPS,
                     help=f"any of {STEPS}, 'keyword', or module:Class (default: the 4 ablation steps)")
+    ap.add_argument("--baseline", help="matcher the others are compared against (default: the first in --matcher)")
+    ap.add_argument("--n-boot", type=int, default=2000, help="bootstrap resamples (default 2000)")
     ap.add_argument("--split", choices=["test", "dev", "all"], default="test")
     ap.add_argument("--errors", action="store_true", help="list false positives / misses per item")
     ap.add_argument("--check", metavar="LABELS", help="show how label names map onto O*NET")

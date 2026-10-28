@@ -65,3 +65,49 @@ def test_bootstrap_interval_contains_point_estimate():
 def test_kappa():
     assert ev.kappa([True, False, True, False], [True, False, True, False]) == 1.0
     assert ev.kappa([True, True, False, False], [True, False, True, False]) == 0.0
+
+
+# --- paired comparison --------------------------------------------------------
+
+def _items(pattern):
+    """pattern: list of (tp, fp, fn) per item."""
+    return [ev.Counts(tp=t, fp=f, fn_vocab=n) for t, f, n in pattern]
+
+
+def test_paired_identical_matchers_give_zero():
+    a = _items([(3, 1, 0), (1, 0, 2), (4, 0, 0), (2, 2, 1)] * 5)
+    d = ev.paired_bootstrap(a, a, "f1", n_boot=300)
+    assert d.diff == 0 and d.lo == 0 and d.hi == 0 and d.p == 1.0
+
+
+def test_paired_detects_consistent_improvement_and_is_narrower_than_separate_intervals():
+    import random
+    rng = random.Random(1)
+    # items vary a lot in difficulty; B fixes one false positive on every second item
+    a, b = [], []
+    for i in range(30):
+        tp, fn = rng.randint(1, 8), rng.randint(0, 3)
+        fp = rng.randint(1, 3)
+        a.append(ev.Counts(tp=tp, fp=fp, fn_vocab=fn))
+        b.append(ev.Counts(tp=tp, fp=fp - (i % 2), fn_vocab=fn))
+    d = ev.paired_bootstrap(a, b, "precision", n_boot=1000)
+    assert d.diff > 0 and d.lo > 0 and d.p < 0.05          # real improvement found
+    a_lo, a_hi = ev.bootstrap_ci(a, "precision", n_boot=1000)
+    b_lo, b_hi = ev.bootstrap_ci(b, "precision", n_boot=1000)
+    assert b_lo < a_hi                                      # separate intervals overlap ...
+    assert (d.hi - d.lo) < (a_hi - a_lo)                    # ... the paired interval is narrower
+
+
+def test_paired_no_real_difference_includes_zero():
+    a = _items([(3, 1, 0), (2, 0, 1)] * 10)
+    b = _items([(3, 0, 1), (2, 1, 0)] * 10)                 # trades errors, no net gain
+    d = ev.paired_bootstrap(a, b, "f1", n_boot=500)
+    assert d.lo <= 0 <= d.hi
+
+
+def test_paired_requires_same_items_and_counts_wins():
+    with pytest.raises(ValueError):
+        ev.paired_bootstrap(_items([(1, 0, 0)]), _items([(1, 0, 0), (1, 0, 0)]))
+    a = _items([(2, 1, 0), (2, 0, 0), (1, 0, 1)])
+    b = _items([(2, 0, 0), (2, 1, 0), (1, 0, 1)])
+    assert ev.item_wins(a, b) == (1, 1, 1)
