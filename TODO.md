@@ -184,11 +184,30 @@ Peer-trial measures:
     uv run python evaluation/evaluate.py evaluation/labels_gold.csv
     uv run python main.py report data/cvs/cv01.pdf "data scientist" --explain
 
-## Sources
-
+## Sources:
 - [SkillSpan (NAACL 2022)](https://aclanthology.org/2022.naacl-main.366)
 - [Entity Linking in the Job Market Domain](https://ar5iv.labs.arxiv.org/html/2401.17979)
 - [LLMs as Batteries-Included Zero-Shot ESCO Skills Matchers](https://arxiv.org/pdf/2307.03539)
 - [Rethinking Skill Extraction in the Job Market Domain using LLMs (NLP4HR 2024)](https://aclanthology.org/2024.nlp4hr-1.3)
-- [Efficient Text Encoders for Labor Market Analysis](https://arxiv.org/pdf/2505.24640)
 - [NLP for Human Resources: A Survey](https://arxiv.org/pdf/2410.16498)
+- [Efficient Text Encoders for Labor Market Analysis](https://arxiv.org/pdf/2505.24640)
+- [Guidelines for Human-AI Interaction (Microsoft Research)](https://www.microsoft.com/en-us/research/project/guidelines-for-human-ai-interaction/)
+- [Bansal et al., Does the Whole Exceed its Parts? (arXiv)](https://arxiv.org/abs/2006.14779)
+- [Deming & Kahn, Skill Requirements across Firms and Labor Markets (NBER)](https://www.nber.org/papers/w23328)
+- [Hershbein & Kahn, Do Recessions Accelerate Routine-Biased Technological Change? (AER)](https://www.aeaweb.org/doi/10.1257/aer.20161570)
+
+## Summary of sources' relevance (for the report)
+
+| Paper | Relevance | What it can change in your project |
+|---|---|---|
+| **SkillSpan** (Zhang et al. 2022, ITU Copenhagen) | High | Their **annotation guidelines and agreement reporting** are the model for your labelling. Compare your `GUIDELINES.md` with theirs before you label, and report agreement the way they do. It also positions your scope: they extract hard *and* soft skills, you deliberately do tools only |
+| **Clavié & Soulié 2023** (LLMs as zero-shot ESCO matchers) | **Most important** | Directly shapes the LLM verifier: candidate generation plus LLM re-ranking, prompt formats, and their finding that a structured, code-like prompt reduced made-up skills |
+| **Nguyen et al. 2024** (Rethinking skill extraction with LLMs) | High | Explains why the LLM should *verify* rather than extract alone (LLMs underperform supervised models overall) and which mention types LLMs handle better. Use it to predict, before running the evaluation, where the hybrid should win |
+| **Entity Linking in the Job Market** (Zhang et al. 2024) | Medium | Shows mapping text onto a large taxonomy (ESCO) is hard (≈24% top-1 accuracy). Your argument for a narrow, explicit tool vocabulary |
+| **NLP for HR survey** (2024) | Medium | For framing in the introduction or related work; a source of further papers |
+| **Efficient Text Encoders** (2025) | Low | Only relevant if you mention embeddings as an alternative method. Could be cut |
+| **Amershi et al. 2019, *Guidelines for Human-AI Interaction*** (CHI) | The HCAI design basis | 18 guidelines. Several match your design exactly: "make clear how well the system can do what it can do", "support efficient correction", "make clear why the system did what it did". Use them to **justify** the confirm step, evidence phrases and ranges, and as a checklist for the user study |
+| **Bansal et al. 2021, *Does the Whole Exceed its Parts?*** (CHI) | The risk side of explainability | Their study found that AI explanations increased people's acceptance of AI recommendations *whether or not the AI was right*. Your evidence phrases could do the same: users might leave wrong tools unticked because a quote is shown. Your correction-rate measure can test exactly this, which is a strong HCAI point for the paper |
+| **Deming & Kahn 2018, *Skill Requirements across Firms and Labor Markets*** (J. of Labor Economics) | Job ads as a measure of skill demand | The established precedent for measuring demand as "% of postings mentioning a skill". It supports your method in Goal 2 |
+| **Hershbein & Kahn 2018** (American Economic Review) | Representativeness of posting data | They discuss how well job-ad data represents the actual labour market. That's your duplicate, scraper and US-data limitation, backed by a citation instead of only your own say-so |
+| **ESCO** (the EU skills taxonomy) | Your Denmark mismatch | Mention it as the European alternative to O*NET, and as future work for Danish users |
