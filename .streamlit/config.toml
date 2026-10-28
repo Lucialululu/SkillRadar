@@ -1,0 +1,15 @@
+# SkillRadar look (matches the Figma design): near-black base, teal accent.
+# Finer styling (glow, glass cards, bars) is in skillradar/ui.py.
+[theme]
+base = "dark"
+primaryColor = "#18D9B5"
+backgroundColor = "#04080A"
+secondaryBackgroundColor = "#0E1416"
+textColor = "#F2F7F6"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
