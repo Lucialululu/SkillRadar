@@ -5,6 +5,65 @@ SkillRadar: A CV-to-job-market skill-gap tool for job-seeking students, 02830 Ad
   <img src="skillradar_logo.png" width="350" alt="SkillRadar Logo">
 </p> -->
 
+## Our goals
+
+**Aim:** we aim to create a web prototype where a job-seeking student uploads their CV, picks a target role, and gets a ranked list of the tools they are missing, with evidence from real job postings.
+
+### Goal 1: Extract tools reliably from CVs and job postings
+Map free text (CVs and postings) onto one shared vocabulary (O*NET Hot Technology / In Demand tools), so both sides can be compared tool by tool.
+
+**How we test it**
+
+> Hand-label tools in around 40 postings and 10 CVs *before* running the matcher. Tune on a small dev set (10 postings, 2 CVs), report results only on the held-out rest.
+
+> Precision and recall per side (postings, CVs).
+
+> Two of us label the same around 15 postings independently  agreement (Cohen's kappa), to show the labels themselves are reliable.
+
+> Ablation: how much each normalisation step adds (exact O*NET names → + vendor stripping → + acronyms → + case rules).
+
+> Target (set before measuring): precision ≥ 0.85 and recall ≥ 0.75 on held-out postings.
+
+### Goal 2: Measure current tool demand per role, and show it is robust
+For each role, the share of postings that mention each tool, with 95% confidence intervals. Show that this ranking replicates across two independent datasets, and how demand differs between entry-level and senior postings.
+
+**How we test it**
+
+> Rank correlation (Spearman) of the top-20 tools per role between the two datasets (Jan 2024 vs Apr 2024). Target: ρ ≥ 0.8 for data scientist, data analyst and software engineer.
+
+> Bootstrap intervals on each tool's rank, to show which positions in the ranking are actually stable.
+
+> Entry-level vs. mid-senior postings within the same dataset: two-proportion tests per tool, corrected for multiple comparisons.
+
+### Goal 3: A prototype students can use and find useful
+A web interface: upload CV → choose role → skill-gap report (missing tools ranked by demand, coverage score, entry-level vs. senior view).
+
+**How we test it**
+
+> Peer trial with 8–12 job-seeking students using their own CV, with think-aloud on fixed tasks.
+
+> Task success: can they get and read a report without help?
+
+> Perceived accuracy: for each "missing" tool, do they agree it is really missing from their CV?
+
+> Usefulness: short questionnaire (Likert) on whether the report would change what they learn or apply for next.
+
+### Stretch goals (only if Goals 1–3 are done)
+
+> Single job-ad mode: compare the CV with one specific ad, and show how common each requested tool is across the role.
+
+> A short learning suggestion per missing tool.
+
+### Not our goals (delimitation)
+
+> **No trends over time.** Both datasets are single snapshots (Jan and Apr 2024). Our January versus April comparison showed differences between the scrapers, not the market, so we make no rising/falling claims.
+
+> **The report judges what the CV says,** not what the person knows.
+
+> **Data is LinkedIn 2024, around 85% US.** We do not claim it represents the Danish job market.
+
+> No salary prediction, no application automation, no hiring guarantee.
+
 ## What is this?
 
 Every student job-hunting for an internship or first grad role runs into the same wall: it's hard to know, in concrete terms, which skills employers are actually asking for right now, whether your CV reflects that, and which gaps are actually worth closing before a deadline. LinkedIn's "skill match" needs a paid account and only compares you to one posting at a time. Generic CV checkers give vague advice.
