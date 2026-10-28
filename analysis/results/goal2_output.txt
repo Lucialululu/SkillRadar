@@ -1,0 +1,282 @@
+Duplicate ads removed (same text within a role): primary 4,049, secondary 342
+
+## A/B  Replication across datasets (top-20 of each, union)
+
+| role | comparison | n primary (US) | n secondary | tools compared | Spearman ρ | 95% CI | note |
+|---|---|---|---|---|---|---|---|
+| data scientist | A all levels | 777 | 290 | 24 | 0.80 | 0.66–0.88 |  |
+| data scientist | B levels matched | 777 | 126 | 24 | 0.76 | 0.62–0.89 |  |
+| data analyst | A all levels | 1,457 | 386 | 24 | 0.87 | 0.77–0.93 |  |
+| data analyst | B levels matched | 1,457 | 189 | 24 | 0.85 | 0.75–0.91 |  |
+| software engineer | A all levels | 6,368 | 1,382 | 21 | 0.87 | 0.84–0.92 |  |
+| software engineer | B levels matched | 6,368 | 802 | 21 | 0.84 | 0.72–0.90 |  |
+| ml engineer | A all levels | 205 | 91 | 23 | 0.82 | 0.68–0.88 | small sample |
+| ml engineer | B levels matched | 205 | 52 | 23 | 0.82 | 0.66–0.89 | small sample |
+| ux designer | A all levels | 411 | 137 | 26 | 0.63 | 0.46–0.72 |  |
+| ux designer | B levels matched | 411 | 84 | 27 | 0.64 | 0.44–0.73 | small sample |
+
+## C  Rank stability in the primary dataset (bootstrap 95% rank interval)
+
+### data scientist (n=902)
+
+| rank | tool | % postings | rank 95% interval |
+|---|---|---|---|
+| 1 | Python | 78.2 | 1–1 |
+| 2 | SQL | 53.8 | 2–2 |
+| 3 | R | 48.8 | 3–3 |
+| 4 | AWS | 26.2 | 4–4 |
+| 5 | Tableau | 22.0 | 5–6 |
+| 6 | Spark | 21.0 | 5–6 |
+| 7 | TensorFlow | 16.9 | 7–8 |
+| 8 | Java | 14.4 | 7–9 |
+| 9 | PyTorch | 13.0 | 8–10 |
+| 10 | Hadoop | 11.3 | 9–11 |
+| 11 | SAS | 9.5 | 10–15 |
+| 12 | Scala | 9.0 | 11–17 |
+| 13 | C++ | 7.9 | 11–20 |
+| 14 | Scikit-learn | 7.8 | 11–19 |
+| 15 | pandas | 7.6 | 11–19 |
+
+### data analyst (n=1,709)
+
+| rank | tool | % postings | rank 95% interval |
+|---|---|---|---|
+| 1 | SQL | 56.0 | 1–1 |
+| 2 | Excel | 36.3 | 2–3 |
+| 3 | Python | 36.2 | 2–3 |
+| 4 | Tableau | 33.2 | 3–4 |
+| 5 | Power BI | 23.9 | 5–6 |
+| 6 | R | 23.5 | 5–6 |
+| 7 | SAS | 10.3 | 7–9 |
+| 8 | PowerPoint | 9.3 | 7–9 |
+| 9 | Microsoft Office | 8.7 | 7–10 |
+| 10 | AWS | 7.1 | 9–12 |
+| 11 | SAP | 6.7 | 10–13 |
+| 12 | SQL Server | 6.6 | 10–13 |
+| 13 | Snowflake | 5.4 | 11–13 |
+| 14 | Spark | 3.9 | 14–19 |
+| 15 | JIRA | 3.7 | 14–19 |
+
+### software engineer (n=7,456)
+
+| rank | tool | % postings | rank 95% interval |
+|---|---|---|---|
+| 1 | Python | 41.1 | 1–1 |
+| 2 | Java | 38.0 | 2–2 |
+| 3 | C++ | 30.8 | 3–4 |
+| 4 | AWS | 29.6 | 3–5 |
+| 5 | SQL | 29.2 | 4–5 |
+| 6 | JavaScript | 26.7 | 6–6 |
+| 7 | Linux | 22.0 | 7–7 |
+| 8 | C | 19.3 | 8–8 |
+| 9 | C# | 17.1 | 9–12 |
+| 10 | Git | 17.1 | 9–12 |
+| 11 | Docker | 17.0 | 9–12 |
+| 12 | Kubernetes | 16.5 | 10–13 |
+| 13 | React | 15.4 | 12–13 |
+| 14 | TypeScript | 13.3 | 14–16 |
+| 15 | HTML | 12.7 | 14–17 |
+
+### ml engineer (n=229)
+
+| rank | tool | % postings | rank 95% interval |
+|---|---|---|---|
+| 1 | Python | 78.2 | 1–1 |
+| 2 | PyTorch | 55.9 | 2–3 |
+| 3 | TensorFlow | 54.1 | 2–3 |
+| 4 | AWS | 38.9 | 4–4 |
+| 5 | Java | 31.4 | 5–6 |
+| 6 | Spark | 26.2 | 5–8 |
+| 7 | Scikit-learn | 23.1 | 6–10 |
+| 8 | C++ | 22.7 | 6–11 |
+| 9 | SQL | 20.5 | 6–12 |
+| 9 | Scala | 20.5 | 7–12 |
+| 11 | Kubernetes | 15.7 | 9–13 |
+| 11 | Docker | 15.7 | 9–13 |
+| 13 | C | 13.1 | 11–14 |
+| 14 | Git | 7.9 | 13–21 |
+| 15 | Linux | 7.4 | 14–22 |
+
+### ux designer (n=504)
+
+| rank | tool | % postings | rank 95% interval |
+|---|---|---|---|
+| 1 | Figma | 56.5 | 1–1 |
+| 2 | CSS | 25.2 | 2–2 |
+| 3 | HTML | 22.4 | 3–3 |
+| 4 | XD | 17.1 | 4–6 |
+| 5 | JavaScript | 15.9 | 4–7 |
+| 6 | Photoshop | 13.1 | 5–7 |
+| 6 | Illustrator | 13.1 | 5–7 |
+| 8 | JIRA | 8.3 | 8–9 |
+| 9 | Creative Cloud | 5.4 | 8–11 |
+| 10 | Confluence | 3.6 | 9–18 |
+| 11 | InDesign | 3.2 | 9–21 |
+| 12 | React | 3.0 | 10–22 |
+| 13 | jQuery | 2.6 | 10–24 |
+| 13 | Salesforce | 2.6 | 10–25 |
+| 15 | Angular | 2.2 | 11–29 |
+
+## D  Entry level + internship vs mid-senior (secondary dataset, BH-corrected q < 0.05)
+
+### data scientist (junior n=63, senior n=113)  ⚠ small sample, read as indicative only
+
+Tools per posting: junior 4.0, senior 4.7 (longer ads list more tools, so read small differences with care)
+
+| tool | % junior | % senior | senior − junior (pp) | q | sig. |
+|---|---|---|---|---|---|
+| Spark | 7.9 | 27.4 | +19.5 (+8.9 to +30.1) | 0.055 |  |
+| AWS | 9.5 | 22.1 | +12.6 (+2.1 to +23.1) | 0.195 |  |
+| TensorFlow | 6.3 | 15.9 | +9.6 (+0.5 to +18.6) | 0.243 |  |
+| Scala | 7.9 | 16.8 | +8.9 (-0.7 to +18.5) | 0.260 |  |
+| NumPy | 0.0 | 8.0 | +8.0 (+3.0 to +13.0) | 0.186 |  |
+| Tableau | 12.7 | 20.4 | +7.7 (-3.4 to +18.7) | 0.387 |  |
+| pandas | 1.6 | 8.8 | +7.3 (+1.2 to +13.3) | 0.243 |  |
+| PyTorch | 9.5 | 15.9 | +6.4 (-3.5 to +16.3) | 0.408 |  |
+| Kubernetes | 1.6 | 8.0 | +6.4 (+0.5 to +12.2) | 0.259 |  |
+| Docker | 3.2 | 8.8 | +5.7 (-1.1 to +12.5) | 0.330 |  |
+| Linux | 3.2 | 8.0 | +4.8 (-1.8 to +11.4) | 0.387 |  |
+| Scikit-learn | 3.2 | 7.1 | +3.9 (-2.5 to +10.3) | 0.460 |  |
+| Power BI | 6.3 | 8.8 | +2.5 (-5.5 to +10.5) | 0.851 |  |
+| Python | 74.6 | 77.0 | +2.4 (-10.9 to +15.6) | 0.853 |  |
+| Hadoop | 11.1 | 13.3 | +2.2 (-7.8 to +12.1) | 0.853 |  |
+| Java | 7.9 | 8.0 | +0.0 (-8.3 to +8.4) | 0.995 |  |
+| NoSQL | 4.8 | 4.4 | -0.3 (-6.8 to +6.1) | 0.955 |  |
+| C++ | 6.3 | 5.3 | -1.0 (-8.3 to +6.3) | 0.872 |  |
+| JavaScript | 4.8 | 3.5 | -1.2 (-7.5 to +5.0) | 0.853 |  |
+| Git | 4.8 | 3.5 | -1.2 (-7.5 to +5.0) | 0.853 |  |
+| PowerPoint | 4.8 | 3.5 | -1.2 (-7.5 to +5.0) | 0.853 |  |
+| SQL | 52.4 | 50.4 | -1.9 (-17.3 to +13.5) | 0.872 |  |
+| Microsoft Office | 4.8 | 0.0 | -4.8 (-10.0 to +0.5) | 0.186 |  |
+| Excel | 12.7 | 6.2 | -6.5 (-15.9 to +2.8) | 0.327 |  |
+| SAS | 22.2 | 10.6 | -11.6 (-23.3 to +0.1) | 0.195 |  |
+| R | 54.0 | 40.7 | -13.3 (-28.5 to +2.0) | 0.260 |  |
+
+### data analyst (junior n=94, senior n=148)  ⚠ small sample, read as indicative only
+
+Tools per posting: junior 2.9, senior 3.8 (longer ads list more tools, so read small differences with care)
+
+| tool | % junior | % senior | senior − junior (pp) | q | sig. |
+|---|---|---|---|---|---|
+| SQL | 36.2 | 66.2 | +30.0 (+17.7 to +42.4) | 0.000 | yes |
+| R | 10.6 | 24.3 | +13.7 (+4.4 to +23.0) | 0.075 |  |
+| Tableau | 19.1 | 31.1 | +11.9 (+1.0 to +22.8) | 0.155 |  |
+| SAS | 4.3 | 13.5 | +9.3 (+2.4 to +16.1) | 0.127 |  |
+| Snowflake | 1.1 | 9.5 | +8.4 (+3.2 to +13.5) | 0.075 |  |
+| AWS | 6.4 | 13.5 | +7.1 (-0.3 to +14.5) | 0.243 |  |
+| Python | 29.8 | 36.5 | +6.7 (-5.4 to +18.8) | 0.441 |  |
+| JIRA | 1.1 | 6.8 | +5.7 (+1.1 to +10.2) | 0.155 |  |
+| Power BI | 17.0 | 22.3 | +5.3 (-4.9 to +15.4) | 0.441 |  |
+| Informatica | 1.1 | 4.7 | +3.7 (-0.3 to +7.7) | 0.313 |  |
+| Microsoft Access | 0.0 | 3.4 | +3.4 (+0.5 to +6.3) | 0.242 |  |
+| Visual Basic for Applications VBA | 1.1 | 4.1 | +3.0 (-0.8 to +6.8) | 0.340 |  |
+| Visual Basic | 2.1 | 4.7 | +2.6 (-1.9 to +7.1) | 0.441 |  |
+| Redshift | 1.1 | 3.4 | +2.3 (-1.3 to +5.9) | 0.441 |  |
+| SQL Server | 3.2 | 4.7 | +1.5 (-3.4 to +6.5) | 0.624 |  |
+| Microsoft Office | 12.8 | 12.8 | +0.1 (-8.6 to +8.7) | 0.987 |  |
+| Spark | 4.3 | 3.4 | -0.9 (-5.9 to +4.1) | 0.753 |  |
+| Outlook | 3.2 | 2.0 | -1.2 (-5.4 to +3.1) | 0.624 |  |
+| Hadoop | 3.2 | 2.0 | -1.2 (-5.4 to +3.1) | 0.624 |  |
+| C++ | 3.2 | 1.4 | -1.8 (-5.9 to +2.2) | 0.441 |  |
+| SAP | 4.3 | 2.0 | -2.2 (-6.9 to +2.4) | 0.441 |  |
+| SharePoint | 6.4 | 4.1 | -2.3 (-8.2 to +3.5) | 0.535 |  |
+| GitHub | 3.2 | 0.7 | -2.5 (-6.3 to +1.3) | 0.313 |  |
+| Power Platform | 3.2 | 0.0 | -3.2 (-6.7 to +0.4) | 0.155 |  |
+| Excel | 39.4 | 35.8 | -3.6 (-16.1 to +9.0) | 0.624 |  |
+| Java | 6.4 | 2.7 | -3.7 (-9.3 to +1.9) | 0.334 |  |
+| PowerPoint | 9.6 | 4.7 | -4.8 (-11.7 to +2.0) | 0.313 |  |
+
+### software engineer (junior n=212, senior n=725)
+
+Tools per posting: junior 5.6, senior 5.5 (longer ads list more tools, so read small differences with care)
+
+| tool | % junior | % senior | senior − junior (pp) | q | sig. |
+|---|---|---|---|---|---|
+| SQL | 24.1 | 31.0 | +7.0 (+0.3 to +13.6) | 0.252 |  |
+| AWS | 23.1 | 29.7 | +6.5 (-0.0 to +13.1) | 0.252 |  |
+| Go | 6.1 | 10.2 | +4.1 (+0.2 to +8.0) | 0.252 |  |
+| Angular | 8.0 | 11.6 | +3.6 (-0.8 to +7.9) | 0.369 |  |
+| Docker | 15.1 | 18.6 | +3.5 (-2.1 to +9.1) | 0.416 |  |
+| Kubernetes | 14.6 | 17.8 | +3.2 (-2.3 to +8.7) | 0.453 |  |
+| TypeScript | 14.2 | 16.0 | +1.8 (-3.5 to +7.2) | 0.641 |  |
+| React | 15.1 | 16.8 | +1.7 (-3.8 to +7.3) | 0.641 |  |
+| NoSQL | 11.3 | 12.0 | +0.7 (-4.2 to +5.6) | 0.827 |  |
+| C# | 17.5 | 17.4 | -0.1 (-5.9 to +5.7) | 0.980 |  |
+| CSS | 13.2 | 12.3 | -0.9 (-6.1 to +4.2) | 0.794 |  |
+| SQL Server | 10.4 | 9.0 | -1.4 (-6.0 to +3.2) | 0.641 |  |
+| Git | 17.5 | 15.3 | -2.1 (-7.9 to +3.6) | 0.641 |  |
+| Python | 35.4 | 32.7 | -2.7 (-10.0 to +4.6) | 0.641 |  |
+| C | 13.2 | 10.2 | -3.0 (-8.1 to +2.1) | 0.415 |  |
+| HTML | 16.0 | 12.6 | -3.5 (-9.0 to +2.0) | 0.412 |  |
+| GitLab | 7.1 | 2.6 | -4.5 (-8.1 to -0.8) | 0.024 | yes |
+| JavaScript | 31.1 | 26.6 | -4.5 (-11.5 to +2.5) | 0.412 |  |
+| Linux | 17.0 | 12.4 | -4.6 (-10.2 to +1.0) | 0.259 |  |
+| Java | 45.3 | 37.9 | -7.4 (-14.9 to +0.2) | 0.252 |  |
+| C++ | 30.2 | 17.8 | -12.4 (-19.2 to -5.6) | 0.002 | yes |
+
+### ml engineer (junior n=10, senior n=50)  ⚠ small sample, read as indicative only
+
+Tools per posting: junior 3.8, senior 4.6 (longer ads list more tools, so read small differences with care)
+
+| tool | % junior | % senior | senior − junior (pp) | q | sig. |
+|---|---|---|---|---|---|
+| PyTorch | 20.0 | 46.0 | +26.0 (-2.4 to +54.4) | 0.468 |  |
+| AWS | 10.0 | 30.0 | +20.0 (-2.5 to +42.5) | 0.468 |  |
+| Kubernetes | 0.0 | 16.0 | +16.0 (+5.8 to +26.2) | 0.468 |  |
+| Docker | 0.0 | 16.0 | +16.0 (+5.8 to +26.2) | 0.468 |  |
+| Scikit-learn | 0.0 | 14.0 | +14.0 (+4.4 to +23.6) | 0.468 |  |
+| TensorFlow | 30.0 | 42.0 | +12.0 (-19.5 to +43.5) | 0.688 |  |
+| R | 0.0 | 12.0 | +12.0 (+3.0 to +21.0) | 0.516 |  |
+| Git | 0.0 | 8.0 | +8.0 (+0.5 to +15.5) | 0.638 |  |
+| Scala | 10.0 | 18.0 | +8.0 (-13.4 to +29.4) | 0.688 |  |
+| PySpark | 0.0 | 6.0 | +6.0 (-0.6 to +12.6) | 0.678 |  |
+| Airflow | 0.0 | 4.0 | +4.0 (-1.4 to +9.4) | 0.688 |  |
+| Spark | 20.0 | 24.0 | +4.0 (-23.5 to +31.5) | 0.921 |  |
+| Java | 20.0 | 24.0 | +4.0 (-23.5 to +31.5) | 0.921 |  |
+| Python | 80.0 | 82.0 | +2.0 (-25.0 to +29.0) | 0.952 |  |
+| NumPy | 10.0 | 10.0 | +0.0 (-20.4 to +20.4) | 1.000 |  |
+| pandas | 10.0 | 10.0 | +0.0 (-20.4 to +20.4) | 1.000 |  |
+| Hadoop | 10.0 | 8.0 | -2.0 (-22.1 to +18.1) | 0.939 |  |
+| GitHub | 10.0 | 4.0 | -6.0 (-25.4 to +13.4) | 0.678 |  |
+| MATLAB | 10.0 | 2.0 | -8.0 (-27.0 to +11.0) | 0.468 |  |
+| SQL Server | 10.0 | 2.0 | -8.0 (-27.0 to +11.0) | 0.468 |  |
+| Power BI | 10.0 | 2.0 | -8.0 (-27.0 to +11.0) | 0.468 |  |
+| C++ | 20.0 | 12.0 | -8.0 (-34.4 to +18.4) | 0.688 |  |
+| Shell scripting | 10.0 | 0.0 | -10.0 (-28.6 to +8.6) | 0.163 |  |
+| MySQL | 10.0 | 0.0 | -10.0 (-28.6 to +8.6) | 0.163 |  |
+| C# | 10.0 | 0.0 | -10.0 (-28.6 to +8.6) | 0.163 |  |
+| SQL | 40.0 | 24.0 | -16.0 (-48.6 to +16.6) | 0.571 |  |
+| GitLab | 20.0 | 2.0 | -18.0 (-43.1 to +7.1) | 0.163 |  |
+
+### ux designer (junior n=11, senior n=69)  ⚠ small sample, read as indicative only
+
+Tools per posting: junior 2.9, senior 2.2 (longer ads list more tools, so read small differences with care)
+
+| tool | % junior | % senior | senior − junior (pp) | q | sig. |
+|---|---|---|---|---|---|
+| Adobe Analytics | 0.0 | 10.1 | +10.1 (+3.0 to +17.3) | 0.675 |  |
+| Google Analytics | 0.0 | 8.7 | +8.7 (+2.0 to +15.3) | 0.675 |  |
+| JIRA | 0.0 | 5.8 | +5.8 (+0.3 to +11.3) | 0.714 |  |
+| Salesforce | 0.0 | 5.8 | +5.8 (+0.3 to +11.3) | 0.714 |  |
+| JavaScript | 9.1 | 14.5 | +5.4 (-13.5 to +24.3) | 0.718 |  |
+| Creative Cloud | 0.0 | 4.3 | +4.3 (-0.5 to +9.2) | 0.714 |  |
+| Node.js | 0.0 | 2.9 | +2.9 (-1.1 to +6.9) | 0.714 |  |
+| ServiceNow | 0.0 | 2.9 | +2.9 (-1.1 to +6.9) | 0.714 |  |
+| TypeScript | 0.0 | 2.9 | +2.9 (-1.1 to +6.9) | 0.714 |  |
+| PMS | 0.0 | 1.4 | +1.4 (-1.4 to +4.3) | 0.718 |  |
+| Power BI | 0.0 | 1.4 | +1.4 (-1.4 to +4.3) | 0.718 |  |
+| React | 9.1 | 7.2 | -1.8 (-19.9 to +16.2) | 0.829 |  |
+| InDesign | 9.1 | 4.3 | -4.7 (-22.4 to +12.9) | 0.714 |  |
+| PowerPoint | 9.1 | 1.4 | -7.6 (-24.9 to +9.6) | 0.451 |  |
+| Angular | 9.1 | 1.4 | -7.6 (-24.9 to +9.6) | 0.451 |  |
+| Visio | 9.1 | 1.4 | -7.6 (-24.9 to +9.6) | 0.451 |  |
+| Figma | 63.6 | 55.1 | -8.6 (-39.3 to +22.2) | 0.714 |  |
+| C | 9.1 | 0.0 | -9.1 (-26.1 to +7.9) | 0.141 |  |
+| Asana | 9.1 | 0.0 | -9.1 (-26.1 to +7.9) | 0.141 |  |
+| CSS | 27.3 | 17.4 | -9.9 (-37.7 to +17.9) | 0.714 |  |
+| Illustrator | 27.3 | 14.5 | -12.8 (-40.4 to +14.8) | 0.675 |  |
+| Photoshop | 27.3 | 13.0 | -14.2 (-41.7 to +13.3) | 0.659 |  |
+| HTML | 36.4 | 15.9 | -20.4 (-50.1 to +9.3) | 0.451 |  |
+| XD | 36.4 | 10.1 | -26.2 (-55.5 to +3.1) | 0.152 |  |
+
+CSVs and figures saved in analysis/results/
