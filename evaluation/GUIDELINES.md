@@ -20,7 +20,7 @@ a label file.
 
 ## What counts as a tool
 
-Write down every **named tool or technology** that the text says the person uses / the job requires
+We will write down every **named tool or technology** that the text says the person uses / the job requires
 or mentions as part of the work: programming languages, libraries, databases, cloud platforms,
 BI tools, office software, ML frameworks, version control, etc.
 
@@ -28,7 +28,7 @@ BI tools, office software, ML frameworks, version control, etc.
 - **No:** company names that are not used as a tool ("Google is an equal opportunity employer",
   "Join Facebook's team"), English words ("Go further", "excel at communication", "C-level"),
   general skills ("machine learning", "statistics", "communication").
-- **Write every tool, also ones you think our vocabulary does not have** (e.g. "Jupyter", "uv").
+- **Write every tool, also ones we think our vocabulary does not have** (e.g. "Jupyter", "uv").
   `evaluate.py` reports recall both on all tools and on the ones in our O*NET vocabulary, and the
   out-of-vocabulary share is a result in itself.
 - Each tool once per item, even if mentioned five times.
@@ -45,6 +45,14 @@ Check which names it could not map: fix typos, leave real out-of-vocabulary tool
     uv run python evaluation/evaluate.py --check evaluation/labels_<yourname>.csv
 
 `notes`: anything unsure ("'Spark' could be the company name here").
+
+## Posting groups
+
+| Group | Files | What they're for |
+|---|---|---|
+| **10 dev** | `post_001` – `post_010` | Practice and debugging. Label these first, run the matcher on them, look at its mistakes. These numbers aren't reported as results |
+| **15 shared test** | `post_011` – `post_025` | Both of us label these independently. Used for the agreement score and resolved together into gold |
+| **15 other test** | `post_026` – `post_040` | Only one of us label these. They go into gold as they are |
 
 ## Agreement (two labellers)
 
