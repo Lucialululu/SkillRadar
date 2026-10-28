@@ -24,7 +24,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from skillradar.demand import ROLE_PATTERNS, load_posting_tools  # noqa: E402
+from skillradar.demand import ROLE_PATTERNS, filter_postings, load_posting_tools  # noqa: E402
 from skillradar.report import display_name  # noqa: E402
 from skillradar.robustness import rank_intervals, replication, seniority  # noqa: E402
 
@@ -75,6 +75,8 @@ def main(argv=None):
 
     a, b = load_posting_tools("primary"), load_posting_tools("secondary")
     OUT.mkdir(parents=True, exist_ok=True)
+    print(f"Duplicate ads removed (same text within a role): primary {a.attrs['n_duplicates']:,}, "
+          f"secondary {b.attrs['n_duplicates']:,}\n")
 
     # ---- A + B: replication ------------------------------------------------
     summary = []
@@ -117,6 +119,10 @@ def main(argv=None):
             continue
         s.to_csv(OUT / f"seniority_{role.replace(' ', '_')}.csv", index=False)
         warn = "  ⚠ small sample, read as indicative only" if min(nj, ns) < 100 else ""
+        mean_tools = lambda lv: filter_postings(b, role, lv)["tool_set"].map(len).mean()
+        verbosity = (f"Tools per posting: junior {mean_tools(['entry', 'internship']):.1f}, "
+                     f"senior {mean_tools(['mid-senior']):.1f} (longer ads list more tools, so read "
+                     "small differences with care)")
         show = pd.DataFrame({
             "tool": s["tool"].map(display_name),
             "% junior": s["share_junior"].map(pct), "% senior": s["share_senior"].map(pct),
@@ -124,7 +130,7 @@ def main(argv=None):
                                      for d, lo, hi in zip(s["diff_pp"], s["ci_low_pp"], s["ci_high_pp"])],
             "q": s["q"].map(lambda q: f"{q:.3f}"), "sig.": s["significant"].map({True: "yes", False: ""}),
         })
-        print(f"### {role} (junior n={nj:,}, senior n={ns:,}){warn}\n\n{md(show)}\n")
+        print(f"### {role} (junior n={nj:,}, senior n={ns:,}){warn}\n\n{verbosity}\n\n{md(show)}\n")
 
     print(f"CSVs{'' if args.no_plots else ' and figures'} saved in {OUT.relative_to(ROOT)}/")
 

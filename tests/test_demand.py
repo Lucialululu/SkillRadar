@@ -99,3 +99,52 @@ def test_build_secondary_uses_description_and_skills_desc(tmp_path, m):
 def test_missing_processed_file_gives_helpful_error(tmp_path):
     with pytest.raises(FileNotFoundError, match="python main.py build"):
         load_posting_tools("primary", folder=tmp_path)
+
+
+def test_role_patterns_use_word_boundaries():
+    titles = pd.Series(["Sr. Structural Engineer - Building Design", "Printed Circuit Board Design Engineer",
+                        "Luxury Design Sales Consultant", "SLD Fluids Design Engineer",
+                        "UX/UI Designer", "Graphic Designer & UXUI Web Designer", "Senior UI Designer",
+                        "User Experience Designer", "HTML Engineer"])
+    roles = tag_role(titles).tolist()
+    assert all(pd.isna(r) for r in roles[:4])
+    assert roles[4:8] == ["ux designer"] * 4
+    assert pd.isna(roles[8])                                   # not an "ml engineer"
+
+
+def test_text_hash_ignores_case_and_whitespace():
+    from skillradar.demand import text_hash
+    assert text_hash("We use  Python.\n") == text_hash("we use python.")
+    assert text_hash("We use Python.") != text_hash("We use R.")
+    assert text_hash("") == text_hash(None) == ""
+
+
+def test_load_dedups_identical_ads_within_role(tmp_path):
+    pd.DataFrame({
+        "posting_id": [1, 2, 3, 4, 5], "source": "secondary",
+        "role": ["data scientist", "data scientist", "data analyst", "data scientist", "data scientist"],
+        "level": "entry", "country": "United States", "title": ["a", "b", "c", "d", "e"],
+        "company": "X", "text_hash": ["h1", "h1", "h1", "", ""], "tools": ["Python"] * 5,
+    }).to_csv(tmp_path / "posting_tools_secondary.csv", index=False)
+    pt = load_posting_tools("secondary", folder=tmp_path)
+    assert pt["posting_id"].tolist() == [1, 3, 4, 5]          # same ad in another role is kept, empty text never merged
+    assert pt.attrs["n_duplicates"] == 1
+    assert len(load_posting_tools("secondary", folder=tmp_path, dedup=False)) == 5
+
+
+def test_old_tables_without_hash_warn(tmp_path):
+    pd.DataFrame({"posting_id": [1], "source": "primary", "role": "data scientist", "level": "",
+                  "country": "", "title": "a", "tools": "Python"}).to_csv(
+        tmp_path / "posting_tools_primary.csv", index=False)
+    with pytest.warns(UserWarning, match="rebuild"):
+        load_posting_tools("primary", folder=tmp_path)
+
+
+def test_build_writes_hash_and_company(tmp_path, m):
+    pd.DataFrame({"job_id": [1, 2], "title": ["Data Scientist", "Data Scientist II"],
+                  "description": ["We use Python.", "We use  python."], "skills_desc": [None, None],
+                  "formatted_experience_level": ["Entry level", "Entry level"],
+                  "company_name": ["Acme", "Acme"]}).to_csv(tmp_path / "postings.csv", index=False)
+    out = build_secondary(m, folder=tmp_path)
+    assert out["company"].tolist() == ["Acme", "Acme"]
+    assert out.loc[0, "text_hash"] == out.loc[1, "text_hash"] != ""

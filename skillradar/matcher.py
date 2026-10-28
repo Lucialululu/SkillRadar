@@ -79,8 +79,15 @@ CASE_SENSITIVE = {
 }
 
 # aliases we removed after looking at real postings (write them as they appear,
-# e.g. "Go" or "google"); filled in from suggest_drops() + a human decision
-MANUAL_DROP: set[str] = set()
+# e.g. "Go" or "google"); filled in from suggest_drops() + a human decision.
+# Decided 28 Oct 2026 from scripts/alias_snippets.py (10 snippets per alias and dataset):
+#   Google   -> drop. 0 of 20 meant a tool called "Google": employer ("At Google"), verb
+#               ("search ... in Google"), or the start of a product name (Google Cloud, Test,
+#               Play, Slides). Products in our vocabulary keep their own alias (Google Analytics,
+#               Google Sheets, Google Ads, ...).
+#   Facebook -> drop. 17 of 20 were "follow us on Facebook" or the company; 3 were ad platforms.
+#   C, Go    -> keep. 19/20 and 20/20 were the programming language.
+MANUAL_DROP: set[str] = {"Google", "Facebook"}
 
 MAX_NGRAM = 8
 

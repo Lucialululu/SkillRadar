@@ -22,8 +22,10 @@ Usage:
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import re
+import warnings
 from pathlib import Path
 from typing import Iterable
 
@@ -39,13 +41,15 @@ SOURCES = {
     "secondary": DATA / "kaggle",       # arshkon 124K, Apr 2024
 }
 
-# first matching pattern wins, matched against the posting title (case-insensitive)
+# first matching pattern wins, matched against the posting title (case-insensitive).
+# \b = word boundary. Without it "ui" matched inside "Building", "Circuit", "Equipment",
+# "Fluids" and "ux" inside "Luxury": 31% of "ux designer" postings were not UX (fixed 28 Oct 2026).
 ROLE_PATTERNS = {
-    "data scientist":    r"data scien",
-    "data analyst":      r"data analy",
-    "software engineer": r"software (?:engineer|developer)",
-    "ml engineer":       r"(?:machine learning|ml) engineer",
-    "ux designer":       r"(?:ux|ui|user experience).*design",
+    "data scientist":    r"\bdata scien",
+    "data analyst":      r"\bdata analy",
+    "software engineer": r"\bsoftware (?:engineer|developer)",
+    "ml engineer":       r"\b(?:machine learning|ml) engineer",
+    "ux designer":       r"\b(?:ux|ui|uxui|user experience)\b.*design",
 }
 
 # the two datasets name experience levels differently -> one shared vocabulary
@@ -93,11 +97,26 @@ def normalise_level(level: pd.Series) -> pd.Series:
 # Step 1: BUILD the posting -> tools table (offline)
 # ---------------------------------------------------------------------------
 
+def text_hash(text) -> str:
+    """Fingerprint of a posting text (case and whitespace ignored), used to find the same ad
+    posted several times (other cities, slightly different titles). Empty text -> ''."""
+    if not isinstance(text, str) or not text.strip():
+        return ""
+    return hashlib.sha1(" ".join(text.lower().split()).encode("utf-8")).hexdigest()[:16]
+
+
+def _optional(path: Path, wanted: list[str]) -> list[str]:
+    """The subset of `wanted` columns that the CSV actually has."""
+    have = set(pd.read_csv(path, nrows=0).columns)
+    return [c for c in wanted if c in have]
+
+
 def build_primary(matcher: KeywordMatcher, folder: Path = SOURCES["primary"],
                   chunksize: int = 100_000) -> pd.DataFrame:
     """asaniczka dataset: titles in linkedin_job_postings.csv, text streamed from job_summary.csv."""
-    meta = pd.read_csv(folder / "linkedin_job_postings.csv",
-                       usecols=["job_link", "job_title", "job_level", "search_country"])
+    path = folder / "linkedin_job_postings.csv"
+    meta = pd.read_csv(path, usecols=["job_link", "job_title", "job_level", "search_country"]
+                       + _optional(path, ["company"]))
     meta = meta.drop_duplicates("job_link")
     meta["role"] = tag_role(meta["job_title"])
     meta = meta[meta["role"].notna()].set_index("job_link")
@@ -110,6 +129,7 @@ def build_primary(matcher: KeywordMatcher, folder: Path = SOURCES["primary"],
             rows.append({
                 "posting_id": link, "source": "primary", "role": m["role"],
                 "level": m["job_level"], "country": m["search_country"], "title": m["job_title"],
+                "company": m.get("company", ""), "text_hash": text_hash(text),
                 "tools": SEP.join(sorted(matcher.extract_tools(text))),
             })
     out = pd.DataFrame(rows)
@@ -120,7 +140,8 @@ def build_primary(matcher: KeywordMatcher, folder: Path = SOURCES["primary"],
 def build_secondary(matcher: KeywordMatcher, folder: Path = SOURCES["secondary"]) -> pd.DataFrame:
     """arshkon dataset: everything is in postings.csv (US only)."""
     cols = ["job_id", "title", "description", "skills_desc", "formatted_experience_level"]
-    p = pd.read_csv(folder / "postings.csv", usecols=cols).drop_duplicates("job_id")
+    p = pd.read_csv(folder / "postings.csv", usecols=cols + _optional(folder / "postings.csv", ["company_name"]))
+    p = p.drop_duplicates("job_id")
     p["role"] = tag_role(p["title"])
     p = p[p["role"].notna()]
     text = p["description"].fillna("") + "\n" + p["skills_desc"].fillna("")
@@ -128,6 +149,8 @@ def build_secondary(matcher: KeywordMatcher, folder: Path = SOURCES["secondary"]
         "posting_id": p["job_id"], "source": "secondary", "role": p["role"],
         "level": normalise_level(p["formatted_experience_level"]),
         "country": "United States", "title": p["title"],
+        "company": p["company_name"] if "company_name" in p else "",
+        "text_hash": [text_hash(t) for t in text],
         "tools": [SEP.join(sorted(matcher.extract_tools(t))) for t in text],
     })
     return out.reset_index(drop=True)
@@ -145,12 +168,25 @@ def build(source: str, matcher: KeywordMatcher, out_dir: Path = PROCESSED) -> Pa
 # Step 2: QUERY demand
 # ---------------------------------------------------------------------------
 
-def load_posting_tools(source: str = "primary", folder: Path = PROCESSED) -> pd.DataFrame:
+def load_posting_tools(source: str = "primary", folder: Path = PROCESSED, dedup: bool = True) -> pd.DataFrame:
+    """Load the built table. dedup=True keeps one posting per identical ad text within a role
+    (the same job posted in several cities would otherwise be counted several times, and the
+    percentages / tests assume independent postings). attrs['n_duplicates'] = rows removed."""
     path = folder / f"posting_tools_{source}.csv"
     if not path.exists():
         raise FileNotFoundError(f"{path} not found. Build it first:  python main.py build --source {source}")
     df = pd.read_csv(path, keep_default_na=False, na_values={"level": [""], "country": [""]})
     df["tool_set"] = df["tools"].map(lambda s: set(s.split(SEP)) if s else set())
+    n_dup = 0
+    if dedup:
+        if "text_hash" in df:
+            dup = df.duplicated(["role", "text_hash"]) & (df["text_hash"] != "")
+            n_dup = int(dup.sum())
+            df = df[~dup].reset_index(drop=True)
+        else:
+            warnings.warn(f"{path.name} was built before duplicate removal existed; rebuild it "
+                          f"(python main.py build --source {source}) to drop reposted ads.")
+    df.attrs["n_duplicates"] = n_dup
     return df
 
 
