@@ -18,7 +18,7 @@ Map free text (CVs and postings) onto one shared vocabulary of tools and technol
 
 > Precision and recall per side (postings, CVs).
 
-> Two of us label the same 15 postings independently → agreement (F1 between labellers, Cohen's kappa), to show the labels themselves are reliable.
+> Both of us label all 40 postings independently → agreement (F1 between labellers, Cohen's kappa), to show the labels themselves are reliable. The gold labels are the union of both label sets (`evaluation/merge_gold.py`): a tool counts if either labeller found it.
 
 > Ablation: how much each normalisation step adds (exact O*NET names → + vendor stripping → + acronyms → + case rules).
 
@@ -74,9 +74,9 @@ A web interface: upload CV → choose role → check and correct the tools we fo
 
 | Goal | Status | Result |
 |---|---|---|
-| 1 · Extraction | test set drawn, labelling in progress | Indirect check only so far: our text matcher agrees with the primary dataset's own skill labels within ~3 points for 23 of the top 25 data-scientist tools |
-| 2 · Robust demand | ✅ analysed | Rankings replicate across the two datasets: Spearman ρ = 0.87 (data analyst), 0.87 (software engineer), 0.80 (data scientist), 0.82 (ML engineer, small sample), 0.63 (UX designer). Top 3–7 tools per role have stable ranks. Few entry vs. senior differences survive correction; clearest: data-analyst entry ads ask for SQL far less often (36% vs 66%) |
-| 3 · Prototype | ✅ v1 built, user tests pending | `app.py` |
+| 1 · Extraction | labelled, evaluation run pending | 40 postings labelled independently by both of us: agreement F1 = 0.86 (Cohen's κ = 0.90). Gold labels = union of both (`evaluation/labels_gold.csv`), on average 6.8 tools per posting; 3 postings name no tools at all. Earlier indirect check: our text matcher agrees with the primary dataset's own skill labels within ~3 points for 23 of the top 25 data-scientist tools |
+| 2 · Robust demand | analysed | Rankings replicate across the two datasets: Spearman ρ = 0.87 (data analyst), 0.87 (software engineer), 0.80 (data scientist), 0.82 (ML engineer, small sample), 0.63 (UX designer). Top 3–7 tools per role have stable ranks. Few entry vs. senior differences survive correction; clearest: data-analyst entry ads ask for SQL far less often (36% vs 66%) |
+| 3 · Prototype | v1 built, testing app hosted, user tests pending | `app.py`; participant version `app_testing.py` with a feedback form that saves to a shared Google Sheet |
 
 Data-quality fixes that changed results: **duplicate ads** (the same job posted in several cities: 4,049 in the primary and 342 in the secondary target-role postings) are now removed; a **role-pattern bug** put building/circuit design jobs under "ux designer" (31%); **Google** and **Facebook** were dropped as aliases after checking real postings (company names, not tools). Full tables: `analysis/results/`, numbers and decisions: [`TODO.md`](TODO.md).
 
@@ -137,10 +137,28 @@ This runs the skill matcher over every posting for our five roles once and saves
 ### 3. Run the web app (the prototype)
 
 ```bash
-uv run streamlit run app.py      # opens in the browser; needs step 2 (both sources for all features)
+uv run streamlit run app.py           # the prototype; opens in the browser
+uv run streamlit run app_testing.py   # the same app + the user-study feedback form (step 5)
 ```
 
-Four steps, styled after the Figma design (`skillradar/ui.py`, `.streamlit/config.toml`): upload a CV (or use the example CV) → pick a role and dataset → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges, coverage and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added, for the peer-trial notes; nothing is saved.
+Both need the tables from step 2. The three small files they read (`data/processed/posting_tools_*.csv`, `data/onet/software_skills.csv`) are committed, so after `git pull` the apps also run without building.
+
+> [!NOTE]
+> To stop the app, go to the terminal and press `ctrl+c`.
+
+Four steps, styled after the Figma design (`skillradar/ui.py`, `.streamlit/config.toml`): upload a CV (or use the example CV) → pick a role and dataset → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges, coverage and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added, for the peer-trial notes; `app.py` saves nothing.
+
+### User testing (peer trial)
+
+`app_testing.py` is the version for participants. After the report, step 5 asks the six questionnaire statements (1–5), "What was confusing?" and "What would you improve?". With the participant's consent it saves one anonymous row per session: participant code, role, dataset, sample or own CV, number of tools found/removed/added, ratings and comments. Never the CV or its file name.
+
+- **Hosted** (Streamlit Community Cloud, main file `app_testing.py`): rows go to a shared Google Sheet configured in the app's Streamlit Secrets.
+- **Locally:** rows go to `data/user_study/responses.csv` on that computer (gitignored).
+
+Setup, Google Sheet and deployment steps: [`user_testing/README_TESTING.md`](user_testing/README_TESTING.md). Protocol, consent text and tasks: [`evaluation/user_study.md`](evaluation/user_study.md).
+
+> [!IMPORTANT]
+> The Google key lives only in Streamlit Secrets and in `.streamlit/secrets.toml` (gitignored). Never commit it. Participant-level results stay in the sheet; only summaries go into the report.
 
 The steps below are the **command-line version**, which we use for development and debugging.
 
@@ -208,7 +226,8 @@ uv run python scripts/alias_snippets.py                  # evidence for MANUAL_D
 uv run python evaluation/sample_postings.py              # done once (28 Oct); re-run only with --force, see evaluation/GUIDELINES.md
 uv run python evaluation/evaluate.py --check evaluation/labels_<you>.csv
 uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
-uv run python evaluation/evaluate.py evaluation/labels_gold.csv          # P/R for all ablation steps, test split
+uv run python evaluation/merge_gold.py evaluation/labels_A.csv evaluation/labels_B.csv   # union -> labels_gold.csv (overwrites manual fixes!)
+uv run python evaluation/evaluate.py evaluation/labels_gold.csv          # P/R for all ablation steps, test split (needs the posting texts in evaluation/items/)
 uv run python analysis/goal2.py > analysis/results/goal2_output.txt   # replication, rank stability, entry vs senior
 ```
 
@@ -231,8 +250,11 @@ Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `
 | `skillradar/variants.py` | ablation variants of the matcher (exact → vendor → acronym → full) |
 | `skillradar/robustness.py` | Goal 2 statistics: replication (Spearman + bootstrap), rank intervals, entry vs senior (z-test + Benjamini-Hochberg) |
 | `app.py` | Streamlit web prototype: the 4-step flow (Upload → Role → Check → Report) |
+| `app_testing.py` | participant version of `app.py` with the user-study feedback form (step 5) |
+| `skillradar/study_logging.py` | saves anonymous study responses to the Google Sheet (hosted) or a local CSV; refuses any field that is not in the agreed list |
 | `skillradar/ui.py` | the app's look: CSS and small HTML pieces (step bar, evidence rows, bars with 95% ticks, coverage ring); all CV text is escaped |
-| `evaluation/` | blind sampling, labelling guidelines, `evaluate.py` (precision/recall, agreement) |
+| `evaluation/` | blind sampling, labelling guidelines, label files (A, B, gold), `evaluate.py` (precision/recall, agreement), `merge_gold.py`, user-study protocol and pilot notes |
+| `user_testing/` | how to run and host the testing app and set up the Google Sheet |
 | `analysis/goal2.py` | Goal 2 tables and figures |
 | `scripts/alias_snippets.py` | shows where suspicious aliases fire, for MANUAL_DROP decisions |
 
@@ -252,7 +274,9 @@ Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `
 ## Data requirements
 
 > [!IMPORTANT]
-> This repo does **not** ship any data. `data/` is gitignored, so you need to create it yourself and download the three sources below into it. None of them is small, and none is ours to redistribute, so this step is on you.
+> This repo does **not** ship the raw data. `data/` is gitignored, so you need to create it yourself and download the three sources below into it. None of them is small, and none is ours to redistribute, so this step is on you.
+>
+> The only exception: the three small processed files the web app reads (`data/processed/posting_tools_primary.csv`, `posting_tools_secondary.csv`, `data/onet/software_skills.csv`) are committed, so the hosted testing app works. They contain role, title, company and extracted tool names, not the posting texts.
 
 Expected layout after downloading:
 
@@ -324,7 +348,7 @@ We keep it for two things the primary dataset can't do:
 > - `postings.csv` - main table, full posting text in `description`
 > - `jobs/job_skills.csv` + `mappings/skills.csv` - only 35 broad job categories (Sales, IT, ...), not tool-level skills, so at most a coarse role filter
 >
-> `jobs/benefits.csv`, `jobs/salaries.csv`, and everything under `companies/` are not used - see [DELIMITATION](draft_notes/project_draft.md) (no salary prediction, no company-level analysis).
+> `jobs/benefits.csv`, `jobs/salaries.csv`, and everything under `companies/` are not used - see [DELIMITATION](notes/project_draft.md) (no salary prediction, no company-level analysis).
 
 License: [ODbL](https://opendatacommons.org/licenses/odbl/) - fine for coursework/research, cited accordingly in our report.
 <!-- TODO: another source lists this dataset as CC BY-SA 4.0, check the Kaggle page -->
@@ -382,7 +406,7 @@ Both end with a **Findings → decisions** table.
 
 ## Project docs
 
-Status, plan, decisions and open questions: [`TODO.md`](TODO.md). Earlier notes on motivation, risks and the lightning/premortem presentations: [`draft_notes/`](draft_notes/). Labelling rules: [`evaluation/GUIDELINES.md`](evaluation/GUIDELINES.md).
+Status, plan, decisions and open questions: [`TODO.md`](TODO.md). Earlier notes on motivation, risks, literature and the lightning/premortem presentations: [`notes/`](notes/). Labelling rules: [`evaluation/GUIDELINES.md`](evaluation/GUIDELINES.md). User-study protocol: [`evaluation/user_study.md`](evaluation/user_study.md).
 
 > [!IMPORTANT]
-> Do not commit anything from `data/` to Git. All datasets are large and none is ours to redistribute — that's exactly why it's gitignored.
+> Do not commit anything else from `data/` to Git (CVs, raw datasets, study responses). The raw datasets are large and none is ours to redistribute, which is why `data/` is gitignored apart from the three processed files above.

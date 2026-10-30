@@ -1,11 +1,11 @@
 # SkillRadar: status & TODO
 
-*Last updated: week 8 (Wed 28 Oct 2026, after the work session). Next session: week 9 (4 Nov).*
+*Last updated: week 8 (Fri 30 Oct 2026). Next session: week 9 (4 Nov).*
 *Final presentation 25 Nov · hand-in 2 Dec (confirm, see Open decisions) · defence 18 Dec.*
 
 ## Where we are in one paragraph
 
-The pipeline, the matcher (frozen as `matcher-v1-frozen`), the web prototype and the Goal 2 analysis all work and are on `main`. The test design for all three goals is done (week 6 material), and the blind label sample is drawn. **What is missing is evidence from people:** the labels (Goal 1), the LLM comparison, the user tests (Goal 3), plus the literature review and the report. These are the next three weeks.
+The pipeline, the matcher (frozen as `matcher-v1-frozen`), the web prototype and the Goal 2 analysis all work and are on `main`. The test design for all three goals is done (week 6 material). **The Goal 1 labels are done** (both of us labelled all 40 postings, agreement F1 0.86, gold = union), and the **testing app is hosted** with a feedback form that saves to a shared Google Sheet. **Still missing:** the Goal 1 evaluation run, the LLM comparison, the user tests themselves (pilot + peer trial), the literature review and the report.
 
 ## Changes in direction (decided week 8)
 
@@ -31,23 +31,24 @@ The pipeline, the matcher (frozen as `matcher-v1-frozen`), the web prototype and
 | Keyword matcher | ✅ frozen | `matcher-v1-frozen`: 301 tools, 448 aliases, MANUAL_DROP = Google, Facebook |
 | Role tagging | ✅ fixed | Word boundaries; before, 31% of "ux designer" postings were building/circuit design |
 | CV parser, demand, report, CLI | ✅ | |
-| Web prototype `app.py` | ✅ v1 | Confirm/correct step, evidence, ranges, entry vs senior column, facilitator panel. **Not tested with users yet** |
+| Web prototype `app.py` | ✅ v1 | Confirm/correct step, evidence, ranges, entry vs senior column, facilitator panel. Role-count lag on step 2 fixed. **Not tested with users yet** |
+| Testing app `app_testing.py` | ✅ hosted | Streamlit Community Cloud; step 5 feedback form (6 ratings + 2 open questions + correction counts) → Google Sheet. Setup: `user_testing/README_TESTING.md` |
 | Goal 1 evaluation setup | ✅ | `evaluation/`: 40 postings (10 dev / 30 test), guidelines, `evaluate.py` (P/R, bootstrap CIs, agreement, ablation) |
-| Goal 1 labels | ❌ | **Next task** |
+| Goal 1 labels | ✅ | Both labelled all 40 postings: F1 0.86, κ 0.90. `labels_gold.csv` = union (`merge_gold.py`), 6.8 tools per posting on average, 3 postings with none. CV labels still to do |
 | Goal 2 analysis | ✅ | `analysis/goal2.py`, results below |
 | LLM verifier | ❌ | Week 9 |
-| User tests (pilot + trial) | ❌ | Pilot this week |
+| User tests (pilot + trial) | ⚠️ | Protocol (`evaluation/user_study.md`) and hosted testing app ready; no sessions yet |
 | Literature review | ❌ | Reading list below |
 | Report (ACM, 3 pages) | ❌ | Skeleton this week |
 | Trello | ❌ | |
-| Tests | ✅ 79 passed, 1 xfail | Verification only, not accuracy |
+| Tests | ✅ 97 passed, 1 xfail | Verification only, not accuracy |
 
 ## Course weeks 6–8: what was expected, what we have
 
 | Week | Expected | Status |
 |---|---|---|
 | 6 · test methods | Test plan tied to the goals (validity, reliability, bias) | ✅ Goals with tests and targets; blind held-out labels; frozen matcher; two labellers; bootstrap CIs; duplicate removal; limitations stated |
-| 7 · peer testing | Testable prototype in front of peers | ⚠️ Prototype ready since 28 Oct; no user tests yet |
+| 7 · peer testing | Testable prototype in front of peers | ⚠️ Prototype ready since 28 Oct, testing app hosted 30 Oct; no user tests yet |
 | 8 · scientific writing + peer testing | Start the paper, keep testing | ❌ Report not started, no pilot yet |
 
 ## Results so far (for the report)
@@ -80,28 +81,25 @@ The pipeline, the matcher (frozen as `matcher-v1-frozen`), the web prototype and
 
 ## THIS WEEK (until 4 Nov)
 
-- [ ] **A+B: labelling (most important).**
-  - Each copies `evaluation/labels_TEMPLATE.csv` → `labels_<name>.csv` and follows `evaluation/GUIDELINES.md`.
-  - Both label the 10 dev postings + the **same 15 test postings**, independently and without running the matcher.
-  - A labels the remaining 15 test postings.
-  - `uv run python evaluation/evaluate.py --check evaluation/labels_<name>.csv` → fix typos.
-  - `uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv` → discuss → `labels_gold.csv`.
-- [ ] **A+B: pilot the app with 2 classmates** (think-aloud, ~15 min each).
+- [x] **Labelling.** Both labelled all 40 postings independently (F1 0.86, κ 0.90); `labels_gold.csv` = union of both.
+- [x] **Peer-trial protocol** in `evaluation/user_study.md`: tasks, think-aloud, consent text, questionnaire, what we log.
+- [x] **Testing app hosted** (`app_testing.py`, Streamlit Cloud) with feedback saved to the Google Sheet.
+- [ ] **Practice submission** on the hosted app (`TEST01`) → check the row appears in the sheet → delete it.
+- [ ] **Pilot the app with 2 classmates** (think-aloud, ~15 min each).
   - Tasks: "upload your CV, check the tools, tell us what you would learn next and why".
-  - Notes + the facilitator-panel numbers go in `evaluation/pilot_notes.md` (no names).
+  - Ratings, comments and correction counts: the feedback form (Google Sheet). Observations and task success: `evaluation/pilot_notes.md` (no names).
   - Ask for CVs for the evaluation set (consent, neutral filenames, delete after the project).
-- [ ] **A+B: tell the teachers** about the lost member, the new scope and goals, and ask the Open decisions below.
-- [ ] **A+B: Overleaf** with the ACM sigconf template + the course section template. Paste in the goals, the Goal 2 table and the data-quality findings.
-- [ ] **A+B: Trello** (To Do / Doing / Done / Stuck) from this file, with a name on every card.
+- [ ] **Tell the teachers** about the lost member, the new scope and goals, and ask the Open decisions below.
+- [ ] **Overleaf** with the ACM sigconf template + the course section template. Paste in the goals, the Goal 2 table, the data-quality findings and the label agreement.
+- [ ] **Trello** (To Do / Doing / Done / Stuck) from this file, with a name on every card.
 - [ ] **A: update the notebook findings tables** with the 28 Oct rerun numbers. Add the duplicate and UX findings. Fix "v2 is larger with validated skills" → "tool-level labels (not validated)". Jan vs Apr row decision → "No trend claims. Goal 2 = replication + entry vs senior".
 - [ ] **A: commit Goal 2 results:** `analysis/results/` + `goal2_output_v2.txt` (move it to `analysis/results/`). Delete the old `goal2_output.txt`.
-- [ ] **B: write the peer-trial protocol** in `evaluation/user_study.md`: tasks, think-aloud instructions, consent text, questionnaire (perceived accuracy, usefulness, trust; 5-point Likert), what we log.
 
 ## Plan, weeks 9–13
 
 | Week | Deliverables |
 |---|---|
-| **9** (4 Nov) | **LLM verifier** `skillradar/llm_matcher.py`: same `extract_tools(text)` interface, built as `Class(software_df)`; prompt = text + keyword candidates + O*NET list; JSON answer with an evidence quote; quotes not found in the text are rejected automatically. Plus LLM-only and hybrid variants · gold labels finished · CV labels (≥ 6 test CVs) · fixes from the pilot |
+| **9** (4 Nov) | **LLM verifier** `skillradar/llm_matcher.py`: same `extract_tools(text)` interface, built as `Class(software_df)`; prompt = text + keyword candidates + O*NET list; JSON answer with an evidence quote; quotes not found in the text are rejected automatically. Plus LLM-only and hybrid variants · CV labels (≥ 6 test CVs) · fixes from the pilot |
 | **10** (11 Nov) | **Goal 1 evaluation run:** `evaluate.py labels_gold.csv --matcher exact vendor acronym full <llm> <hybrid>` on held-out postings + CVs · **peer trial** with 6–8 students · literature section drafted |
 | **11** (18 Nov) | Analysis + figures · full report draft · fix the top usability issues |
 | **12** (25 Nov) | Final presentation · report polish |
@@ -111,7 +109,7 @@ Peer-trial measures:
 - task success without help
 - perceived accuracy (does each "missing" tool really feel missing?)
 - usefulness and trust (Likert)
-- **correction rate** from the facilitator panel: removed tools = false positives, added tools = misses. This gives a second, real-world Goal 1 measurement.
+- **correction rate** (saved automatically with each feedback row): removed tools = false positives, added tools = misses. This gives a second, real-world Goal 1 measurement.
 
 ## Work split (2 people)
 
@@ -120,7 +118,7 @@ Peer-trial measures:
 - **Both:** labelling (two labellers needed for agreement), literature, presentation.
 - Everyone commits **their own work under their own account** (contribution appendix).
 
-## Literature (read abstract, figures, results; 2–3 lines each in `draft_notes/literature.md`)
+## Literature (read abstract, figures, results; 2–3 lines each in `notes/literature_notes.md`)
 
 | Paper | What we take from it |
 |---|---|
@@ -167,6 +165,10 @@ Peer-trial measures:
 - [ ] Power BI / Hadoop: dataset labels higher than our text matcher. Look at 5 postings each
 - [ ] Try a two-column PDF and a .docx CV in the app
 - [ ] Two licence TODOs in the README · secondary notebook still says "notebooks/" and "data_inspection.ipynb"
+- [ ] Testing app: step headers still say "Step N of 4", but there are now 5 steps
+- [ ] `evaluation/peer_trial_results.csv` is an empty manual template; the Google Sheet replaces it. Delete it, or use it only for the facilitator's task-success columns
+- [ ] `app_testing.py` is a copy of `app.py`: fixes to one must be copied to the other
+- [ ] Before a final evaluation run, check that `merge_gold.py` is not rerun (it overwrites the manual fixes in `labels_gold.csv`)
 
 ## Known limitations (for the report)
 
@@ -178,9 +180,10 @@ Peer-trial measures:
 
     uv sync && uv run pytest
     uv run python main.py build --source primary          # and --source secondary; rebuild after any matcher change
-    uv run streamlit run app.py
+    uv run streamlit run app.py                           # or app_testing.py (with the feedback form)
     uv run python analysis/goal2.py > analysis/results/goal2_output.txt
     uv run python evaluation/evaluate.py --check evaluation/labels_<name>.csv
+    uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
     uv run python evaluation/evaluate.py evaluation/labels_gold.csv
     uv run python main.py report data/cvs/cv01.pdf "data scientist" --explain
 
