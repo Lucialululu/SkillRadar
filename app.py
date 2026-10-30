@@ -183,6 +183,12 @@ def step_role() -> None:
     datasets = [k for k, (_, _, src, _) in DATASETS.items() if get_postings(src) is not None]
     # Streamlit forgets a widget's value when its step is not shown, so each widget gets a key
     # that is seeded once from our own state (ss.role / ss.dataset) and copied back after.
+    # Sync the dataset choice BEFORE the role captions use it: Streamlit stores a clicked widget's new
+    # value before the rerun, but ss.dataset was only copied back after the role cards were drawn,
+    # so the posting counts lagged one click behind.
+    ds_titles = {DATASETS[k][0]: k for k in datasets}
+    ss.setdefault("w_dataset", DATASETS[ss.dataset][0])
+    ss.dataset = ds_titles[ss.w_dataset]
     role_names = {ROLE_NAMES.get(r, r.capitalize()): r for r in ROLE_PATTERNS}
     ss.setdefault("w_role", ROLE_NAMES.get(ss.role, ss.role.capitalize()))
     st.radio("Role", list(role_names), key="w_role", horizontal=True, label_visibility="collapsed",
@@ -190,8 +196,6 @@ def step_role() -> None:
     ss.role = role_names[ss.w_role]
     st.write("")
     st.markdown("**Compare against**")
-    ds_titles = {DATASETS[k][0]: k for k in datasets}
-    ss.setdefault("w_dataset", DATASETS[ss.dataset][0])
     st.radio("Compare against", list(ds_titles), key="w_dataset", horizontal=True, label_visibility="collapsed",
              captions=[DATASETS[k][1] for k in datasets])
     ss.dataset = ds_titles[ss.w_dataset]
