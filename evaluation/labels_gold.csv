@@ -1,0 +1,41 @@
+item_id,split,labeller,true_tools,notes
+post_001,dev,A+B,Python,
+post_002,dev,A+B,,"fields only (data science); No tools named; Meta posting is only title, pay and links"
+post_003,dev,A+B,SQL; Python; R; PyTorch; TensorFlow; MXNet; Hadoop; NoSQL,"'other NoSQL technologies' left out as a generic category, not a named tool; only A: NoSQL"
+post_004,dev,A+B,,"methods only (ML, NLP, neural nets), no named tools; No tools named (only model types like neural nets, NLP)"
+post_005,dev,A+B,Python; SQL; PySpark; BigQuery; Databricks; scikit-learn; NumPy; R; pandas,"only B: R, pandas"
+post_006,dev,A+B,SQL; Python; Spark; Actimize; Oracle Mantas,"'presentations slides/decks' does not name PowerPoint, so not labelled; only B: Actimize, Oracle Mantas"
+post_007,dev,A+B,Python; SQL; AWS; Airflow; OMOP CDM; Epic Clarity,"OMOP CDM, FHIR, ICD, CPT, LOINC, SNOMED-CT left out as data/coding standards rather than tools; unsure, worth discussing; only A: OMOP CDM; only B: Epic Clarity"
+post_008,dev,A+B,R; Python; JAGS; Stan; Linux; Spark; H2O; EC2; S3; SQL; NoSQL,GIS and 'NoSQL columnar databases' left out as generic; only A: NoSQL
+post_009,dev,A+B,Python; R; TensorFlow; PyTorch; scikit-learn; SQL; Hadoop; Tableau; Power BI; RDF; OWL; SPARQL,"RDF/OWL are data formats: keep or drop, same rule as JSON/XML in post_013; RDF/OWL/SPARQL included as named Semantic Web technologies"
+post_010,dev,A+B,Kafka; Kinesis; Spark; AWS; Azure; GCP; R; Python; TensorFlow; SQL; Kubernetes; Docker; Git; Tableau; Dataiku; Snowflake; Microsoft Office,"'Google' in a list of cloud technologies read as Google Cloud; MLaaS/AIaaS left out as generic; only A: GCP; only B: Tableau, Dataiku, Google Cloud, Snowflake, Microsoft Office"
+post_011,test,A+B,Python; R; SAS; SQL,"'version control' generic, not labelled"
+post_012,test,A+B,Python; R; ArcGIS,"GIS generic, ArcGIS Suite labelled"
+post_013,test,A+B,Python; R; SQL; HQL; NoSQL; JSON; XML,"JSON/XML are data formats: keep or drop, same rule as RDF/OWL in post_009; HQL = Hive Query Language; NoSQL and JSON/XML file formats left out; only A: NoSQL, JSON, XML"
+post_014,test,A+B,Python; SQL; Spark,
+post_015,test,A+B,Scala; Java; Python; Amazon EMR; AWS Batch; Spark; PyTorch,"Written as 'AWS EMR, Batch' in text; only B: Amazon EMR, AWS Batch, Spark, PyTorch"
+post_016,test,A+B,R; SQL; Python; PySpark; Java; JavaScript; C++; Amazon SageMaker; Amazon Forecast; Perl; Bash,"NDC (airline distribution standard) left out; only B: Perl, Bash"
+post_017,test,A+B,Python; Power BI; SQL; UiPath; Power Automate,'UiPath and Orchestrator' -> UiPath (Orchestrator is part of UiPath); only B: Power Automate
+post_018,test,A+B,Python; Databricks; Power BI,
+post_019,test,A+B,Python; SQL; R; Power BI; Tableau; Excel; Git,"DevOps is a practice, not labelled; only B: Git"
+post_020,test,A+B,,"academic faculty post, no tools named; No tools named (academic posting)"
+post_021,test,A+B,SQL; PyTorch; TensorFlow; Azure; OpenCV; Microsoft Office; Grafana; Power BI; Tableau,"CI/CD and MLOps left out as generic; only B: Microsoft Office, Grafana, Power BI, Tableau"
+post_022,test,A+B,Python; pandas; scikit-learn; SQL; MLflow; Databricks; AWS; S3; Glue; Lambda; SageMaker; Jupyter; Spark; Hive,"Text writes 'sklearn'; only A: Glue, Lambda; only B: Spark, Hive"
+post_023,test,A+B,Python; R; SQL; C#; C++; Confluence; GitHub,"only B: Confluence, GitHub"
+post_024,test,A+B,Spark; PySpark; Power BI; Tableau; Amazon SageMaker; AWS; Docker; SAS; Python,"only B: SAS, Python"
+post_025,test,A+B,Python,
+post_026,test,A+B,Python; R; C++; SQL; AWS; GCP; Azure; Hadoop; Spark; Apache Beam; Kafka; PyTorch; TensorFlow; LangChain; LlamaIndex,"JazzHR is the posting platform, not a job tool; only B: PyTorch, TensorFlow, LangChain, LlamaIndex"
+post_027,test,A+B,Python; R; Java; SQL; Tableau; MicroStrategy; Spark; Hive; Hadoop,
+post_028,test,A+B,SQL; R; Python; Looker; Tableau,"only B: Looker, Tableau"
+post_029,test,A+B,R; Python; SAS; SQL; Microsoft Office; Excel; PowerPoint,"'Notebook or IDE' too generic to label as Jupyter; only B: SQL, Microsoft Office, Excel, PowerPoint"
+post_030,test,A+B,Python; R; Scala; Java; SQL; AWS; GCP; Azure; IBM Watson; Azure Bot Service; Dialogflow; Alexa; Rasa; Amazon Lex; Hive; Spark; Tableau; HDFS,Azure Bot Service was written Azure chatbot; 'Azure chatbot' read as Azure Bot Service; only B: HDFS
+post_031,test,A+B,Power BI; SQL; DAX,"CHECK: Microsoft = a product (e.g. Microsoft Office/Excel, write that) or just the company (drop)?; 'Power BI Desktop/Service' -> Power BI; only B: DAX"
+post_032,test,A+B,Python; MATLAB; R; PyTorch; Keras; TensorFlow; Git,GPU programming and HPC generic; only B: Git
+post_033,test,A+B,Python; R; SQL; PySpark; AWS; Azure,
+post_034,test,A+B,Python; R; SQL; Java; Scala,NoSQL and graph DB left out as generic
+post_035,test,A+B,SQL; Python; R; Looker; Tableau,"Exact duplicate of post_028; only B: Looker, Tableau"
+post_036,test,A+B,Python; SQL; Spark; Databricks; BigQuery; MongoDB; Tableau; Power BI; Data Studio; R; JavaScript; Scala; SAS; Statistica; SPSS,"'SAS E Miner' -> SAS Enterprise Miner; only B: SAS, Statistica, SPSS"
+post_037,test,A+B,Python; pandas; Dask; Spark; AWS; scikit-learn; H2O; XGBoost; SQL,'beloved Notebook' (Jupyter?) and pre-commit hooks not labelled; unsure
+post_038,test,A+B,Python; Power BI; UiPath; UiPath Orchestrator; SQL; Power Automate,Same posting as post_017 without the company intro; only A: UiPath Orchestrator; only B: Power Automate
+post_039,test,A+B,Python; PySpark; SQL,
+post_040,test,A+B,R,
