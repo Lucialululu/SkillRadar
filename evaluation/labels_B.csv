@@ -1,0 +1,41 @@
+item_id,split,labeller,true_tools,notes
+post_001,dev,B,Python,
+post_002,dev,B,,"No tools named; Meta posting is only title, pay and links"
+post_003,dev,B,SQL; Python; R; PyTorch; TensorFlow; MXNet; Hadoop,"'other NoSQL technologies' left out as a generic category, not a named tool"
+post_004,dev,B,,"No tools named (only model types like neural nets, NLP)"
+post_005,dev,B,Python; SQL; R; PySpark; BigQuery; Databricks; scikit-learn; pandas; NumPy,
+post_006,dev,B,Actimize; Oracle Mantas; SQL; Python; Spark,"'presentations slides/decks' does not name PowerPoint, so not labelled"
+post_007,dev,B,Python; SQL; AWS; Airflow; Epic Clarity,"OMOP CDM, FHIR, ICD, CPT, LOINC, SNOMED-CT left out as data/coding standards rather than tools; unsure, worth discussing"
+post_008,dev,B,R; Python; JAGS; Stan; Linux; Amazon EC2; Amazon S3; Spark; H2O; SQL,"GIS and 'NoSQL columnar databases' left out as generic"
+post_009,dev,B,Python; R; TensorFlow; PyTorch; scikit-learn; SQL; Hadoop; Tableau; Power BI; RDF; OWL; SPARQL,"RDF/OWL/SPARQL included as named Semantic Web technologies"
+post_010,dev,B,Tableau; Dataiku; Kafka; Amazon Kinesis; Spark; AWS; Azure; Google Cloud; R; Python; TensorFlow; SQL; Snowflake; Kubernetes; Docker; Git; Microsoft Office,"'Google' in a list of cloud technologies read as Google Cloud; MLaaS/AIaaS left out as generic"
+post_011,test,B,Python; R; SAS; SQL,"'version control' generic, not labelled"
+post_012,test,B,Python; R; ArcGIS,"GIS generic, ArcGIS Suite labelled"
+post_013,test,B,Python; R; SQL; HQL,"HQL = Hive Query Language; NoSQL and JSON/XML file formats left out"
+post_014,test,B,Python; SQL; Spark,
+post_015,test,B,Amazon EMR; AWS Batch; Scala; Spark; PyTorch; Java; Python,"Written as 'AWS EMR, Batch' in text"
+post_016,test,B,R; Python; Perl; Bash; SQL; PySpark; Java; JavaScript; C++; Amazon SageMaker; Amazon Forecast,"NDC (airline distribution standard) left out"
+post_017,test,B,Python; Power BI; Power Automate; UiPath; SQL,"'UiPath and Orchestrator' -> UiPath (Orchestrator is part of UiPath)"
+post_018,test,B,Python; Databricks; Power BI,
+post_019,test,B,Python; SQL; R; Power BI; Tableau; Excel; Git,"DevOps is a practice, not labelled"
+post_020,test,B,,"No tools named (academic posting)"
+post_021,test,B,Microsoft Office; Grafana; Power BI; Tableau; SQL; PyTorch; TensorFlow; OpenCV; Azure,"CI/CD and MLOps left out as generic"
+post_022,test,B,Python; pandas; scikit-learn; SQL; Jupyter; MLflow; Databricks; AWS; Amazon S3; AWS Glue; AWS Lambda; Amazon SageMaker; Spark; Hive,"Text writes 'sklearn'"
+post_023,test,B,Python; R; SQL; C#; C++; Confluence; GitHub,
+post_024,test,B,SAS; Docker; Amazon SageMaker; AWS; Python; Tableau; Power BI; Spark; PySpark,
+post_025,test,B,Python,
+post_026,test,B,Python; R; C++; SQL; PyTorch; TensorFlow; LangChain; LlamaIndex; AWS; GCP; Azure; Hadoop; Spark; Apache Beam; Kafka,"JazzHR is the posting platform, not a job tool"
+post_027,test,B,Python; R; R Markdown; Java; SQL; Tableau; MicroStrategy; Hadoop; Hive; Spark,
+post_028,test,B,SQL; R; Python; Looker; Tableau,
+post_029,test,B,Python; R; SQL; SAS; Microsoft Office; Excel; PowerPoint,"'Notebook or IDE' too generic to label as Jupyter"
+post_030,test,B,Python; R; Scala; Java; SQL; AWS; GCP; Azure; IBM Watson; Azure Bot Service; Dialogflow; Alexa; Rasa; Amazon Lex; HDFS; Hive; Spark; Tableau,"'Azure chatbot' read as Azure Bot Service"
+post_031,test,B,Power BI; DAX; SQL,"'Power BI Desktop/Service' -> Power BI"
+post_032,test,B,Python; MATLAB; R; PyTorch; Keras; TensorFlow; Git,"GPU programming and HPC generic"
+post_033,test,B,Python; R; SQL; PySpark; AWS; Azure,
+post_034,test,B,Python; R; SQL; Java; Scala,"NoSQL and graph DB left out as generic"
+post_035,test,B,SQL; R; Python; Looker; Tableau,"Exact duplicate of post_028"
+post_036,test,B,Python; SQL; Spark; Databricks; BigQuery; MongoDB; Tableau; Power BI; Data Studio; R; JavaScript; Scala; SAS; Statistica; SPSS; SAS Enterprise Miner,"'SAS E Miner' -> SAS Enterprise Miner"
+post_037,test,B,Python; pandas; Dask; Spark; AWS; scikit-learn; H2O; XGBoost; SQL,"'beloved Notebook' (Jupyter?) and pre-commit hooks not labelled; unsure"
+post_038,test,B,Python; Power BI; Power Automate; UiPath; SQL,"Same posting as post_017 without the company intro"
+post_039,test,B,Python; PySpark; SQL,
+post_040,test,B,R,
