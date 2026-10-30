@@ -6,6 +6,7 @@ CV text stays in session memory, never in the study CSV.
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import streamlit as st
@@ -221,10 +222,18 @@ def step_check() -> None:
 
 
 @st.cache_resource
+def _open_sheet(config_json: str):
+    """Opening the sheet is slow, so it is cached, keyed on the secrets themselves: edited secrets reopen it."""
+    return sheet_from_secrets({"gsheets": json.loads(config_json)})
+
+
 def get_study_sheet():
-    """The Google Sheet from the app's secrets ([gsheets]), or None -> local CSV. See user_testing/README_TESTING.md."""
+    """The Google Sheet from the app's secrets ([gsheets]), or None -> local CSV. See user_testing/README_TESTING.md.
+    Secrets are read on every save (not cached), so secrets added after the app started are picked up."""
     try:
-        return sheet_from_secrets(st.secrets)
+        if "gsheets" not in st.secrets:
+            return None
+        return _open_sheet(json.dumps(dict(st.secrets["gsheets"]), sort_keys=True))
     except FileNotFoundError:                    # no secrets.toml at all (normal when testing locally)
         return None
 
@@ -266,7 +275,7 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
                 st.error("Please answer all six questions.")
             else:
                 try:
-                    save_response({
+                    where = save_response({
                         "participant_id": participant_id.strip(),
                         "test_run": test_run,
                         "cv_type": "sample" if ss.cv_key == "example" else "own",
@@ -284,6 +293,9 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
                 else:
                     ss.study_saved = True
                     st.success("Feedback saved. Thank you!")
+                    if where == "csv":                # tell the facilitator; a hosted server's disk is wiped
+                        st.caption("Saved on this server only, not in the study's Google Sheet "
+                                   "(no [gsheets] secrets found).")
 
 
 def step_report() -> None:
