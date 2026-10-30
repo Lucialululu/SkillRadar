@@ -1,0 +1,41 @@
+item_id,split,labeller,true_tools,notes
+post_001,dev,A,Python,
+post_002,dev,A,,fields only (data science)
+post_003,dev,A,SQL; Python; R; PyTorch; TensorFlow; MXNet; Hadoop; NoSQL,
+post_004,dev,A,,"methods only (ML, NLP, neural nets), no named tools"
+post_005,dev,A,Python; SQL; PySpark; BigQuery; Databricks; scikit-learn; NumPy,
+post_006,dev,A,SQL; Python; Spark,
+post_007,dev,A,Python; SQL; AWS; Airflow; OMOP CDM,
+post_008,dev,A,R; Python; JAGS; Stan; Linux; Spark; H2O; EC2; S3; SQL; NoSQL,
+post_009,dev,A,Python; R; TensorFlow; PyTorch; scikit-learn; SQL; Hadoop; Tableau; Power BI; RDF; OWL; SPARQL,"RDF/OWL are data formats: keep or drop, same rule as JSON/XML in post_013"
+post_010,dev,A,Kafka; Kinesis; Spark; AWS; Azure; GCP; R; Python; TensorFlow; SQL; Kubernetes; Docker; Git,
+post_011,test,A,Python; R; SAS; SQL,
+post_012,test,A,Python; R; ArcGIS,
+post_013,test,A,Python; R; SQL; HQL; NoSQL; JSON; XML,"JSON/XML are data formats: keep or drop, same rule as RDF/OWL in post_009"
+post_014,test,A,Python; SQL; Spark,
+post_015,test,A,Scala; Java; Python,
+post_016,test,A,R; SQL; Python; PySpark; Java; JavaScript; C++; Amazon SageMaker; Amazon Forecast,
+post_017,test,A,Python; Power BI; SQL; UiPath,
+post_018,test,A,Python; Databricks; Power BI,
+post_019,test,A,Python; SQL; R; Power BI; Tableau; Excel,
+post_020,test,A,,"academic faculty post, no tools named"
+post_021,test,A,SQL; PyTorch; TensorFlow; Azure; OpenCV,
+post_022,test,A,Python; pandas; scikit-learn; SQL; MLflow; Databricks; AWS; S3; Glue; Lambda; SageMaker; Jupyter,
+post_023,test,A,Python; R; SQL; C#; C++,
+post_024,test,A,Spark; PySpark; Power BI; Tableau; Amazon SageMaker; AWS; Docker,
+post_025,test,A,Python,
+post_026,test,A,Python; R; C++; SQL; AWS; GCP; Azure; Hadoop; Spark; Apache Beam; Kafka,
+post_027,test,A,Python; R; R Markdown; Java; SQL; Tableau; MicroStrategy; Apache Spark; Hive; Hadoop,
+post_028,test,A,SQL; R; Python,
+post_029,test,A,R; Python; SAS,
+post_030,test,A,Python; R; Scala; Java; SQL; AWS; GCP; Azure; IBM Watson; Azure Bot Service; Google Dialogflow; Alexa; Rasa; Amazon Lex; Hive; Spark; Tableau,Azure Bot Service was written Azure chatbot
+post_031,test,A,Power BI; SQL,"CHECK: Microsoft = a product (e.g. Microsoft Office/Excel, write that) or just the company (drop)?"
+post_032,test,A,Python; MATLAB; R; PyTorch; Keras; TensorFlow,
+post_033,test,A,Python; R; SQL; PySpark; AWS; Azure,
+post_034,test,A,Python; R; SQL; Java; Scala,
+post_035,test,A,SQL; Python; R,
+post_036,test,A,Python; SQL; Spark; Databricks; BigQuery; MongoDB; Tableau; Power BI; Data Studio; R; JavaScript; Scala,
+post_037,test,A,Python; pandas; Dask; Spark; AWS; scikit-learn; H2O; XGBoost; SQL,
+post_038,test,A,Python; Power BI; UiPath; UiPath Orchestrator; SQL,
+post_039,test,A,Python; PySpark; SQL,
+post_040,test,A,R,
