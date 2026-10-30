@@ -16,7 +16,7 @@ from skillradar.demand import PROCESSED, ROLE_PATTERNS, demand_table, filter_pos
 from skillradar.matcher import KeywordMatcher
 from skillradar.report import build_report, display_name, format_report
 from skillradar.robustness import rank_intervals, replication, seniority
-from skillradar.study_logging import save_response
+from skillradar.study_logging import save_response, sheet_from_secrets
 
 ONET = Path("data/onet/software_skills.csv")
 TOP = 15
@@ -220,6 +220,15 @@ def step_check() -> None:
             go(4)
 
 
+@st.cache_resource
+def get_study_sheet():
+    """The Google Sheet from the app's secrets ([gsheets]), or None -> local CSV. See user_testing/README_TESTING.md."""
+    try:
+        return sheet_from_secrets(st.secrets)
+    except FileNotFoundError:                    # no secrets.toml at all (normal when testing locally)
+        return None
+
+
 def study_feedback(found: set[str], removed: list[str]) -> None:
     """Study-only app: feedback is always visible, but save requires consent."""
     st.divider()
@@ -243,6 +252,9 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
         answers = {key: st.selectbox(question, [1, 2, 3, 4, 5], index=None,
                                       placeholder="Choose a rating", key=f"q_{key}")
                    for key, question in prompts.items()}
+        st.caption("Please don't include names or anything from your CV.")
+        confusion = st.text_area("What was confusing?", max_chars=1000, key="q_confusion")
+        improvement = st.text_area("What would you improve?", max_chars=1000, key="q_improvement")
         consent = st.checkbox("I consent to saving my anonymous study results")
         submitted = st.form_submit_button("Save test result", type="primary")
         if submitted:
@@ -257,15 +269,18 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
                     save_response({
                         "participant_id": participant_id.strip(),
                         "test_run": test_run,
+                        "cv_type": "sample" if ss.cv_key == "example" else "own",
                         "role": ss.role,
                         "dataset": ss.dataset,
                         "detected": len(found),
                         "added": len(ss.added),
                         "removed": len(removed),
                         **answers,
-                    })
-                except OSError:
-                    st.error("Could not save feedback on this server. Tell the study facilitator.")
+                        "main_confusion": confusion,
+                        "suggested_improvement": improvement,
+                    }, sheet=get_study_sheet())
+                except Exception as err:            # disk full, sheet not shared, no internet, ...
+                    st.error(f"Could not save your feedback ({type(err).__name__}). Please tell the study facilitator.")
                 else:
                     ss.study_saved = True
                     st.success("Feedback saved. Thank you!")

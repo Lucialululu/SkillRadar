@@ -1,4 +1,15 @@
-data/
+# data: everything ignored, except the three small processed files the hosted app needs
+data/*
+!data/processed/
+data/processed/*
+!data/processed/posting_tools_primary.csv
+!data/processed/posting_tools_secondary.csv
+!data/onet/
+data/onet/*
+!data/onet/software_skills.csv
+# Streamlit secrets (Google service-account key): never commit
+.streamlit/secrets.toml
+*service_account*.json
 .venv/
 __pycache__/
 *.pyc

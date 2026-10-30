@@ -46,22 +46,47 @@ Check which names it could not map: fix typos, leave real out-of-vocabulary tool
 
 `notes`: anything unsure ("'Spark' could be the company name here").
 
-## Posting groups
+## Agreement (two labellers)
 
-| Group | Files | What they're for |
-|---|---|---|
-| **10 dev** | `post_001` – `post_010` | Practice and debugging. Label these first, run the matcher on them, look at its mistakes. These numbers aren't reported as results |
-| **15 shared test** | `post_011` – `post_025` | Both of us label these independently. Used for the agreement score and resolved together into gold |
-| **15 other test** | `post_026` – `post_040` | Only one of us label these. They go into gold as they are |
-
-## Agreement (two labellers)´+´+´+´
-
-Both of us label the same **15 test postings** independently (don't discuss them first), then:
+Both of us label the same **postings** independently (don't discuss them first), then:
 
     uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
 
 Afterwards we discuss the disagreements and write one agreed file `evaluation/labels_gold.csv`,
 which is what the evaluation uses. The agreement numbers go in the report.
+
+### Agreement result:
+
+
+40 items labelled by both
+positive agreement (F1 between labellers): 0.86
+Cohen's kappa over item x vocabulary decisions: 0.90 (inflated by the many easy 'not mentioned' decisions; report F1 first)
+
+Disagreements (discuss, then write labels_gold.csv):
+  post_003: only A: NoSQL | only B: -
+  post_005: only A: - | only B: R, pandas
+  post_006: only A: - | only B: Actimize, Oracle Mantas
+  post_007: only A: OMOP CDM | only B: Epic Clarity
+  post_008: only A: EC2, NoSQL, S3 | only B: Amazon EC2, Amazon S3
+  post_010: only A: GCP, Kinesis | only B: Amazon Kinesis, Dataiku, Google, Microsoft Office, Snowflake, Tableau
+  post_013: only A: JSON, NoSQL, XML | only B: -
+  post_015: only A: - | only B: AWS, Amazon EMR, PyTorch, Spark
+  post_016: only A: - | only B: Bash, Perl
+  post_017: only A: - | only B: Power Automate
+  post_019: only A: - | only B: Git
+  post_021: only A: - | only B: Grafana, Microsoft Office, Power BI, Tableau
+  post_022: only A: Glue, Lambda, S3, SageMaker | only B: Amazon S3, Amazon SageMaker, Hive, Spark
+  post_023: only A: - | only B: Confluence, GitHub
+  post_024: only A: - | only B: Python, SAS
+  post_026: only A: - | only B: LangChain, LlamaIndex, PyTorch, TensorFlow
+  post_028: only A: - | only B: Looker, Tableau
+  post_029: only A: - | only B: Excel, Microsoft Office, PowerPoint, SQL
+  post_030: only A: Google | only B: Dialogflow, HDFS
+  post_031: only A: - | only B: DAX
+  post_032: only A: - | only B: Git
+  post_035: only A: - | only B: Looker, Tableau
+  post_036: only A: - | only B: SAS, SPSS, Statistica
+  post_038: only A: UiPath Orchestrator | only B: Power Automate
 
 ## Running the evaluation (in this order)
 
