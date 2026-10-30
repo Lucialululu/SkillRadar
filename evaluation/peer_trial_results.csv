@@ -1,0 +1,9 @@
+participant_id,date,cv_type,target_role,consent,task1_upload_role,task2_correct_tools,task3_understand_report,task4_choose_tool,tools_initial,tools_removed,tools_added,q1_accuracy,q2_relevance,q3_usefulness,q4_explanation,q5_trust,q6_ease,main_confusion,suggested_improvement
+P01,,,,,,,,,,,,,,,,,,,
+P02,,,,,,,,,,,,,,,,,,,
+P03,,,,,,,,,,,,,,,,,,,
+P04,,,,,,,,,,,,,,,,,,,
+P05,,,,,,,,,,,,,,,,,,,
+P06,,,,,,,,,,,,,,,,,,,
+P07,,,,,,,,,,,,,,,,,,,
+P08,,,,,,,,,,,,,,,,,,,
