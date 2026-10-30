@@ -54,7 +54,7 @@ Check which names it could not map: fix typos, leave real out-of-vocabulary tool
 | **15 shared test** | `post_011` – `post_025` | Both of us label these independently. Used for the agreement score and resolved together into gold |
 | **15 other test** | `post_026` – `post_040` | Only one of us label these. They go into gold as they are |
 
-## Agreement (two labellers)
+## Agreement (two labellers)´+´+´+´
 
 Both of us label the same **15 test postings** independently (don't discuss them first), then:
 
