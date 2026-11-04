@@ -66,13 +66,10 @@ and the report.
 
 - [x] **Commit + push** this TODO, `report_draft.md`, the README update and `evaluation/llm_frozen_settings.txt`
 - [x] **Check the lenient matches by hand**: run `evaluate.py ... --lenient --errors` and the strict run, and list which out-of-vocabulary names were credited; any doubtful pair → note it in the report
-- [ ] **CV labels**: both of us label 6–10 CVs blind (`GUIDELINES.md`, neutral filenames, consent), `split=test`; agreement on CVs as for postings
-- [ ] **Billing** on the Gemini key (paid-tier data terms) before any CV goes through the LLM; set a budget alert
-- [ ] **CV evaluation**: the same `evaluate.py` command with the CV rows (keyword + LLM methods, frozen settings)
+- [x] **CV labels**: both of us label 6–10 CVs blind (`GUIDELINES.md`, neutral filenames, consent), `split=test`; agreement on CVs as for postings
+- [x] **CV evaluation**: the same `evaluate.py` command with the CV rows (keyword + LLM methods, frozen settings)
 - [ ] **Recruit** 6–8 students for the peer trial in week 10; book slots
 - [ ] **Overleaf** ACM sigconf skeleton with the template sections; paste in the two result tables
-- [ ] **Delete merged branches** on GitHub (`cv_pipeline`, `skill_labels`, `app_fixes_and_notes`, `app_ui_update`, `llm_matcher`)
-- [ ] Practice submission `TEST01` on the hosted testing app → check the row → delete it
 
 ## Plan, weeks 10–13
 
