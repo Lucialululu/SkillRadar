@@ -1,11 +1,11 @@
-# SkillRadar look (matches the Figma design): near-black base, teal accent.
+# SkillRadar look: radar-scope dark frame, teal = on your CV, amber = missing.
 # Finer styling (glow, glass cards, bars) is in skillradar/ui.py.
 [theme]
 base = "dark"
 primaryColor = "#18D9B5"
-backgroundColor = "#04080A"
-secondaryBackgroundColor = "#0E1416"
-textColor = "#F2F7F6"
+backgroundColor = "#05090D"
+secondaryBackgroundColor = "#0D161D"
+textColor = "#E9F2F0"
 font = "sans serif"
 
 [client]

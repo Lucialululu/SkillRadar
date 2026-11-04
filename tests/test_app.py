@@ -34,3 +34,18 @@ def test_role_counts_follow_the_dataset_choice_immediately():
     assert len(roles.options) == len(all_counts)
     assert all(e < a for e, a in zip(entry_counts, all_counts))   # the entry subset is smaller for every role
     assert counts() == all_counts                                  # and switching back restores it at once
+
+
+@pytest.mark.parametrize("app", ["app.py", "app_testing.py"])
+def test_report_renders_have_first_with_range_key(app):
+    """Both apps reach the report without errors; the report shows the tools you have before the missing ones
+    and explains the 95% range (peer-pilot feedback)."""
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(ROOT / app), default_timeout=120)
+    at.session_state.step = 4
+    at.session_state.cv_text, at.session_state.cv_name, at.session_state.cv_key = "Python, SQL and Tableau", "cv.txt", "t"
+    at.run()
+    assert not at.exception
+    page = "".join(m.value for m in at.markdown)
+    assert page.index("Already on your CV") < page.index("Missing, most requested first")
+    assert "the 95% range" in page and 'class="sr-radar"' in page
