@@ -146,3 +146,15 @@ def test_inexact_quote_is_kept_when_the_tool_name_is_in_the_text(software, tmp_p
     m = make(lm.LLMOnly, software, tmp_path, client=Paraphraser())
     assert m.extract_tools(TEXT) == {"OOV:Databricks"}
     assert m.stats["grounded_by_name"] == 1 and m.stats["dropped_ungrounded"] == 1
+
+
+def test_timeouts_are_retried(monkeypatch):
+    c = lm.GeminiClient.__new__(lm.GeminiClient)
+    monkeypatch.setattr(lm.time, "sleep", lambda s: None)
+    calls = []
+    def flaky():
+        calls.append(1)
+        if len(calls) < 3:
+            raise TimeoutError("The read operation timed out")
+        return "ok"
+    assert c._retry(flaky, "test") == "ok" and len(calls) == 3
