@@ -70,13 +70,13 @@ A web interface: upload CV → choose role → check and correct the tools we fo
 
 > No salary prediction, no application automation, no hiring guarantee.
 
-## Results so far (week 8)
+## Results so far (week 9)
 
 | Goal | Status | Result |
 |---|---|---|
-| 1 · Extraction | labelled, evaluation run pending | 40 postings labelled independently by both of us: agreement F1 = 0.86 (Cohen's κ = 0.90). Gold labels = union of both (`evaluation/labels_gold.csv`), on average 6.8 tools per posting; 3 postings name no tools at all. Earlier indirect check: our text matcher agrees with the primary dataset's own skill labels within ~3 points for 23 of the top 25 data-scientist tools |
+| 1 · Extraction | postings evaluated; CVs pending | **Labels:** 40 postings labelled independently by both of us, agreement F1 = 0.86 (Cohen's κ = 0.90), gold = union. **Keyword matcher** (frozen, 30 held-out postings): precision 0.97, recall 0.94 on tools in our vocabulary, but only 0.73 on all labelled tools, because 23% of them are not in our O\*NET vocabulary. Ablation: the acronym step adds the most (+0.39 recall). **LLM methods** (frozen, same postings, lenient scoring): the hybrid finds 0.95 of all tools (+0.22, 95% CI +0.15 to +0.29) at unchanged precision (0.97); checking keyword matches in context alone adds nothing (1 rejection in 30 postings); embedding linking hurt on dev and is switched off. Cost: ~18–22 s per posting vs milliseconds. Tables: `evaluation/results/` |
 | 2 · Robust demand | analysed | Rankings replicate across the two datasets: Spearman ρ = 0.87 (data analyst), 0.87 (software engineer), 0.80 (data scientist), 0.82 (ML engineer, small sample), 0.63 (UX designer). Top 3–7 tools per role have stable ranks. Few entry vs. senior differences survive correction; clearest: data-analyst entry ads ask for SQL far less often (36% vs 66%) |
-| 3 · Prototype | v1 built, testing app hosted, user tests pending | `app.py`; participant version `app_testing.py` with a feedback form that saves to a shared Google Sheet |
+| 3 · Prototype | v2 (redesign after pilot feedback), peer trial pending | `app.py`; participant version `app_testing.py` saves feedback to a shared Google Sheet. First two responses: the 95% ranges were unclear, matched tools should come first, the look felt generic → the report now shows what you have first, explains the ranges in plain words, and uses a radar chart of demand |
 
 Data-quality fixes that changed results: **duplicate ads** (the same job posted in several cities: 4,049 in the primary and 342 in the secondary target-role postings) are now removed; a **role-pattern bug** put building/circuit design jobs under "ux designer" (31%); **Google** and **Facebook** were dropped as aliases after checking real postings (company names, not tools). Full tables: `analysis/results/`, numbers and decisions: [`TODO.md`](TODO.md).
 
@@ -217,7 +217,7 @@ All options (also shown by `uv run python main.py report --help`):
 - **`Your CV covers 42%`**: demand-weighted coverage of the top tools, so missing a tool that is in 80% of postings costs much more than missing one that is in 10%.
 - **`Also on your CV, outside the top 15`**: tools you have that are less common for this role, with their share.
 - The report judges **what the CV says**, not what you know. If you know SQL but never mention it, SQL shows up as missing, which is useful to know too.
-- The O*NET flag column says "Hot Technology + In Demand" on almost every row, because our vocabulary only contains flagged tools. It will be removed.
+- The O*NET flag column (command-line report only) says "Hot Technology + In Demand" on almost every row, because our vocabulary only contains flagged tools. The web app no longer shows it.
 
 ### Evaluation (Goal 1) and analysis (Goal 2)
 
@@ -241,16 +241,18 @@ uv run python analysis/goal2.py > analysis/results/goal2_output.txt   # replicat
 | `Hybrid` | the frozen keyword matcher proposes candidates; Gemini keeps or rejects each in context and adds missed tools (after Clavié & Soulié 2023) |
 | `HybridVerify` | ablation: only the keep/reject part of the same answer, no additions |
 
-Every answer goes through a **grounding check** (a quote that is not in the text is dropped) and **linking** to O*NET (the same alias lookup as the labels, then embedding similarity above a threshold, otherwise kept as a new tool). Few-shot examples come from dev items only. Nothing is trained; the threshold is chosen on the dev split and frozen before the test. All API answers are cached in `data/llm_cache/` (gitignored).
+Every answer goes through a **grounding check** (a tool is kept only if its quote, or else its name, occurs in the text) and **linking** to O*NET (the same alias lookup as the labels, then embedding similarity above a threshold, otherwise kept as a new tool). Few-shot examples come from dev items only. Nothing is trained; the threshold is chosen on the dev split and frozen before the test. All API answers are cached in `data/llm_cache/` (gitignored).
 
 ```bash
 echo 'GEMINI_API_KEY=...' > .env                                             # key from aistudio.google.com; .env is gitignored
 uv run python -m skillradar.llm_matcher --try "We use Python, Databricks and Power BI."   # connection check
 uv run python evaluation/tune_llm.py                                          # dev split: pick the threshold
-export SKILLRADAR_LINK_THRESHOLD=0.85 && git tag llm-v1-frozen                # example value: use yours
+# frozen settings (tag llm-v1-frozen): evaluation/llm_frozen_settings.txt -> copy those lines into your .env
 uv run python evaluation/evaluate.py evaluation/labels_gold.csv --lenient --matcher full \
     skillradar.llm_matcher:LLMOnly skillradar.llm_matcher:Hybrid skillradar.llm_matcher:HybridVerify
 ```
+
+The frozen run used `gemini-3.5-flash-lite`, few-shot examples `post_003` and `post_005`, and **no embedding linking** (threshold 1.0): on the dev split every embedding link was a related but different tool (BigQuery → MySQL, Kinesis → Kubernetes). Results: `evaluation/results/goal1_test_*.md`.
 
 `--lenient` also credits out-of-vocabulary tools matched by name ("Amazon SageMaker" = "SageMaker"), for every matcher alike; the default strict scoring stays the official keyword result. Do not send CVs on the free API tier: enable billing on the key first, and only with consent.
 
@@ -430,7 +432,7 @@ Both end with a **Findings → decisions** table.
 
 ## Project docs
 
-Status, plan, decisions and open questions: [`TODO.md`](TODO.md). Earlier notes on motivation, risks, literature and the lightning/premortem presentations: [`notes/`](notes/). Labelling rules: [`evaluation/GUIDELINES.md`](evaluation/GUIDELINES.md). User-study protocol: [`evaluation/user_study.md`](evaluation/user_study.md).
+Status, plan, decisions and open questions: [`TODO.md`](TODO.md). Findings, story and material for the paper: [`report_draft.md`](report_draft.md). Earlier notes on motivation, risks, literature and the lightning/premortem presentations: [`notes/`](notes/). Labelling rules: [`evaluation/GUIDELINES.md`](evaluation/GUIDELINES.md). User-study protocol: [`evaluation/user_study.md`](evaluation/user_study.md).
 
 > [!IMPORTANT]
 > Do not commit anything else from `data/` to Git (CVs, raw datasets, study responses). The raw datasets are large and none is ours to redistribute, which is why `data/` is gitignored apart from the three processed files above.
