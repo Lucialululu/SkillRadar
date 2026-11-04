@@ -232,8 +232,9 @@ class GeminiClient:
                 print(f"[llm_matcher] answer after {time.time() - t0:.1f}s", file=sys.stderr, flush=True)
                 return out
             except Exception as err:                  # rate limit / overloaded: wait and try again
-                msg = str(err)
-                if attempt == 5 or not any(c in msg for c in ("429", "RESOURCE_EXHAUSTED", "503", "500", "UNAVAILABLE")):
+                msg = f"{type(err).__name__}: {err}"
+                temporary = ("429", "RESOURCE_EXHAUSTED", "503", "500", "UNAVAILABLE", "Timeout", "timed out")
+                if attempt == 5 or not any(c in msg for c in temporary):
                     raise
                 # a quota error (429) is a per-minute limit: wait out the minute; overload (5xx): back off
                 wait = 65 if ("429" in msg or "RESOURCE_EXHAUSTED" in msg) else min(60, 4 * 2 ** attempt)
