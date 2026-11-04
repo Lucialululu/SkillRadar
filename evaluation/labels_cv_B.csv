@@ -1,6 +1,6 @@
 item_id,split,labeller,true_tools,notes
-cv01,dev,A,Python; R; Bash; RAG; LLM; Pandas; NumPy; Scikit-Learn; PyTorch: TensorFlow; FastAPI; Git; GitHub; Docker; Jupyter; UV; Conda; Linux; HPC,
-cv02,test,A,Python; TypeScript; SQL; C#; F#; C; C++; Bash; Linux; Git; Docker; GCC,
-cv03,test,A,Python; R; Java; C; PyTorch; TensorFlow; scikit-learn; NumPy; Pandas; BM Spectrum LSF; Linux; Git,
-cv04,test,A,Python; C#; Java; R; SQL; Bash; C; PyTorch; TensorFlow; scikit-learn; NumPy; pandas; JAX; Microsoft Azure; Bicep; REST APIs; Docker; Git; IBM Spectrum LSF; Linux,
-cv05,test,A,Python; R; GitHub; Windows; Linux; Databricks; Azure; Numpy; PyTorch; Pandas; Tensorflow; Scikit-learn,
+cv01,dev,B,Python; R; Bash; RAG; LLM; Pandas; NumPy; Scikit-Learn; PyTorch: TensorFlow; FastAPI; Git; GitHub; Docker; Jupyter; UV; Conda; Linux; HPC,
+cv02,test,B,Python; TypeScript; SQL; C#; F#; C; C++; Bash; Linux; Git; Docker; GCC,
+cv03,test,B,Python; R; Java; C; PyTorch; TensorFlow; scikit-learn; NumPy; Pandas; BM Spectrum LSF; Linux; Git,
+cv04,test,B,Python; C#; Java; R; SQL; Bash; C; PyTorch; TensorFlow; scikit-learn; NumPy; pandas; JAX; Microsoft Azure; Bicep; REST APIs; Docker; Git; IBM Spectrum LSF; Linux,
+cv05,test,B,Python; R; GitHub; Windows; Linux); Databricks); Azure); Numpy); PyTorch); Pandas); Tensorflow); Scikit-learn,
