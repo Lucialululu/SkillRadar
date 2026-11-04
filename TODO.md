@@ -64,13 +64,12 @@ and the report.
 
 ## THIS WEEK (until 11 Nov)
 
-- [ ] **Commit + push** this TODO, `report_draft.md`, the README update and `evaluation/llm_frozen_settings.txt`
+- [x] **Commit + push** this TODO, `report_draft.md`, the README update and `evaluation/llm_frozen_settings.txt`
 - [ ] **Check the lenient matches by hand**: run `evaluate.py ... --lenient --errors` and the strict run, and list which out-of-vocabulary names were credited; any doubtful pair → note it in the report
 - [ ] **CV labels**: both of us label 6–10 CVs blind (`GUIDELINES.md`, neutral filenames, consent), `split=test`; agreement on CVs as for postings
 - [ ] **Billing** on the Gemini key (paid-tier data terms) before any CV goes through the LLM; set a budget alert
 - [ ] **CV evaluation**: the same `evaluate.py` command with the CV rows (keyword + LLM methods, frozen settings)
 - [ ] **Recruit** 6–8 students for the peer trial in week 10; book slots
-- [ ] **Tell the teachers**: lost member and new scope, results so far, and the open decisions below
 - [ ] **Overleaf** ACM sigconf skeleton with the template sections; paste in the two result tables
 - [ ] **Delete merged branches** on GitHub (`cv_pipeline`, `skill_labels`, `app_fixes_and_notes`, `app_ui_update`, `llm_matcher`)
 - [ ] Practice submission `TEST01` on the hosted testing app → check the row → delete it
@@ -86,12 +85,6 @@ and the report.
 
 Matcher v2 rule: v1 stays the reported Goal 1 result. v2 is "after evaluation we fixed …", used by the app and for the Goal 2 rerun.
 
-## Work split (2 people)
-
-- **A (Lucia):** LLM verifier, evaluation runs, Goal 2 write-up. Report: method + results.
-- **B:** peer trial (protocol, consent, questionnaire, sessions, analysis), app usability fixes. Report: introduction, related work, user study.
-- **Both:** labelling (two labellers needed for agreement), literature, presentation.
-- Everyone commits **their own work under their own account** (contribution appendix).
 
 ## Literature (read the relevant sections before citing; 2–3 lines each in `notes/literature_notes.md`)
 
