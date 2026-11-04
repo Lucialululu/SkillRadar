@@ -146,7 +146,7 @@ Both need the tables from step 2. The three small files they read (`data/process
 > [!NOTE]
 > To stop the app, go to the terminal and press `ctrl+c`.
 
-Four steps, styled after the Figma design (`skillradar/ui.py`, `.streamlit/config.toml`): upload a CV (or use the example CV) → pick a role and dataset → **check and correct the tools we found** (each one shows the CV phrase it came from) → report with 95% ranges, coverage and an entry-level vs. senior column. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added, for the peer-trial notes; `app.py` saves nothing.
+Four steps (`skillradar/ui.py`, `.streamlit/config.toml`): upload a CV (or use the example CV) → pick a role and dataset → **check and correct the tools we found** (each one shows the CV phrase it came from) → report. The report starts with the tools you already have, then a radar chart (every top tool is a blip; closer to the centre = asked for more often; teal = on your CV, amber = missing), a coverage meter, and the missing tools with their 95% ranges and a plain-language key for reading them. An entry-level vs. senior tag appears only when the difference is significant. The pilot feedback that drove this redesign: ranges were unclear, matched tools should come first, and the old look felt generic. The CV is only held in memory. "For the test facilitator" at the bottom shows how many tools the user removed/added, for the peer-trial notes; `app.py` saves nothing.
 
 ### User testing (peer trial)
 
