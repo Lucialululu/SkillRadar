@@ -65,7 +65,7 @@ and the report.
 ## THIS WEEK (until 11 Nov)
 
 - [x] **Commit + push** this TODO, `report_draft.md`, the README update and `evaluation/llm_frozen_settings.txt`
-- [ ] **Check the lenient matches by hand**: run `evaluate.py ... --lenient --errors` and the strict run, and list which out-of-vocabulary names were credited; any doubtful pair → note it in the report
+- [x] **Check the lenient matches by hand**: run `evaluate.py ... --lenient --errors` and the strict run, and list which out-of-vocabulary names were credited; any doubtful pair → note it in the report
 - [ ] **CV labels**: both of us label 6–10 CVs blind (`GUIDELINES.md`, neutral filenames, consent), `split=test`; agreement on CVs as for postings
 - [ ] **Billing** on the Gemini key (paid-tier data terms) before any CV goes through the LLM; set a budget alert
 - [ ] **CV evaluation**: the same `evaluate.py` command with the CV rows (keyword + LLM methods, frozen settings)

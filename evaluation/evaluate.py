@@ -11,6 +11,10 @@ Goal 1 evaluation: how well do our matchers find the tools a human labelled?
     uv run python evaluation/evaluate.py evaluation/labels_gold.csv --lenient --matcher full \
         skillradar.llm_matcher:LLMOnly skillradar.llm_matcher:Hybrid skillradar.llm_matcher:HybridVerify
 
+    # which out-of-vocabulary matches did lenient scoring credit? (manual check for the report)
+    uv run python evaluation/evaluate.py evaluation/labels_gold.csv --lenient --lenient-pairs --matcher full \
+        skillradar.llm_matcher:LLMOnly skillradar.llm_matcher:Hybrid > evaluation/results/goal1_lenient_pairs.md
+
     # the method comparison: everything against the keyword matcher, paired on the same items
     uv run python evaluation/evaluate.py evaluation/labels_gold.csv --matcher full exact vendor acronym --baseline full
 
@@ -384,6 +388,31 @@ def cmd_evaluate(args, software, norm):
         print("\nLLM cost and behaviour (seconds and tokens are from the original API calls, also when cached)\n")
         print(md(pd.DataFrame(costs)))
 
+    if args.lenient_pairs:
+        print("\n## Matches that only lenient scoring credits (check each one by hand)\n")
+        rows = []
+        for spec, (m, per_item) in details.items():
+            for item, (found, truth, _) in per_item.items():
+                left = set(truth)
+                for f in sorted(found, key=lambda f: (f not in truth, f)):
+                    t = f if f in left else next((t for t in sorted(left) if same_tool(f, t)), None)
+                    if t is None:
+                        continue
+                    left.discard(t)
+                    if f.startswith(OOV) or t.startswith(OOV):       # strict scoring never credits these
+                        name = lambda x: x[len(OOV):] + " (new)" if x.startswith(OOV) else display_name(x)
+                        how = "same name" if squash(name(f).replace(" (new)", "")) == squash(name(t).replace(" (new)", "")) \
+                            else "name contains the other"
+                        rows.append({"matcher": spec, "item": item, "found": name(f), "label": name(t), "rule": how,
+                                     "ok? (fill in)": ""})
+        if rows:
+            df = pd.DataFrame(rows)
+            print(md(df))
+            n_contain = (df["rule"] == "name contains the other").sum()
+            print(f"\n{len(df)} credited pairs, {n_contain} by containment (the ones most worth checking).")
+        else:
+            print("none")
+
     if args.errors:
         for spec, (m, per_item) in details.items():
             print(f"\n## Errors for {spec}")
@@ -464,6 +493,8 @@ def main(argv=None):
     ap.add_argument("--n-boot", type=int, default=2000, help="bootstrap resamples (default 2000)")
     ap.add_argument("--split", choices=["test", "dev", "all"], default="test")
     ap.add_argument("--errors", action="store_true", help="list false positives / misses per item")
+    ap.add_argument("--lenient-pairs", action="store_true",
+                    help="list every found/label pair that only lenient scoring credits, for a manual check")
     ap.add_argument("--lenient", action="store_true",
                     help="also credit found tools that match an out-of-vocabulary label by name (all matchers alike)")
     ap.add_argument("--check", metavar="LABELS", help="show how label names map onto O*NET")
