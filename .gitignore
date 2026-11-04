@@ -21,3 +21,6 @@ __pycache__/
 
 # evaluation: posting texts are not ours to redistribute (labels + manifest ARE committed)
 evaluation/items/
+
+# API keys
+.env

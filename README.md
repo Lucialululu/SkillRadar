@@ -231,6 +231,29 @@ uv run python evaluation/evaluate.py evaluation/labels_gold.csv          # P/R f
 uv run python analysis/goal2.py > analysis/results/goal2_output.txt   # replication, rank stability, entry vs senior
 ```
 
+### LLM methods (Goal 1 method comparison)
+
+`skillradar/llm_matcher.py` adds three matchers next to the keyword matcher, all scored by the same `evaluate.py`:
+
+| Matcher | What it does |
+|---|---|
+| `LLMOnly` | Gemini reads the text and lists every named tool with a quote (open vocabulary) |
+| `Hybrid` | the frozen keyword matcher proposes candidates; Gemini keeps or rejects each in context and adds missed tools (after Clavié & Soulié 2023) |
+| `HybridVerify` | ablation: only the keep/reject part of the same answer, no additions |
+
+Every answer goes through a **grounding check** (a quote that is not in the text is dropped) and **linking** to O*NET (the same alias lookup as the labels, then embedding similarity above a threshold, otherwise kept as a new tool). Few-shot examples come from dev items only. Nothing is trained; the threshold is chosen on the dev split and frozen before the test. All API answers are cached in `data/llm_cache/` (gitignored).
+
+```bash
+echo 'GEMINI_API_KEY=...' > .env                                             # key from aistudio.google.com; .env is gitignored
+uv run python -m skillradar.llm_matcher --try "We use Python, Databricks and Power BI."   # connection check
+uv run python evaluation/tune_llm.py                                          # dev split: pick the threshold
+export SKILLRADAR_LINK_THRESHOLD=0.85 && git tag llm-v1-frozen                # example value: use yours
+uv run python evaluation/evaluate.py evaluation/labels_gold.csv --lenient --matcher full \
+    skillradar.llm_matcher:LLMOnly skillradar.llm_matcher:Hybrid skillradar.llm_matcher:HybridVerify
+```
+
+`--lenient` also credits out-of-vocabulary tools matched by name ("Amazon SageMaker" = "SageMaker"), for every matcher alike; the default strict scoring stays the official keyword result. Do not send CVs on the free API tier: enable billing on the key first, and only with consent.
+
 ### Tests and code
 
 ```bash
@@ -248,6 +271,7 @@ Found a wrong match (e.g. "Go" in "Go further")? Add the sentence as a test in `
 | `skillradar/demand.py` | `build`: postings → `data/processed/posting_tools_<source>.csv`; query: % of postings per tool for a role (with 95% Wilson interval). Role title patterns are in `ROLE_PATTERNS` |
 | `skillradar/report.py` | CV tools vs. role demand → ranked missing skills + demand-weighted coverage |
 | `skillradar/variants.py` | ablation variants of the matcher (exact → vendor → acronym → full) |
+| `skillradar/llm_matcher.py` | LLM-only, hybrid and verify-only matchers (Gemini), grounding check, embedding linking, response cache |
 | `skillradar/robustness.py` | Goal 2 statistics: replication (Spearman + bootstrap), rank intervals, entry vs senior (z-test + Benjamini-Hochberg) |
 | `app.py` | Streamlit web prototype: the 4-step flow (Upload → Role → Check → Report) |
 | `app_testing.py` | participant version of `app.py` with the user-study feedback form (step 5) |

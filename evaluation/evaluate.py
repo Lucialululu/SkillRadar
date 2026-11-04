@@ -7,8 +7,9 @@ Goal 1 evaluation: how well do our matchers find the tools a human labelled?
     # one matcher, with every false positive / false negative listed (use on dev to find bugs)
     uv run python evaluation/evaluate.py evaluation/labels_gold.csv --split dev --matcher full --errors
 
-    # later: any class with extract_tools(text) -> set[str], built as Class(software_df)
-    uv run python evaluation/evaluate.py evaluation/labels_gold.csv --matcher full skillradar.llm_matcher:LLMMatcher
+    # the LLM methods (skillradar/llm_matcher.py; needs GEMINI_API_KEY, answers are cached in data/llm_cache/)
+    uv run python evaluation/evaluate.py evaluation/labels_gold.csv --lenient --matcher full \
+        skillradar.llm_matcher:LLMOnly skillradar.llm_matcher:Hybrid skillradar.llm_matcher:HybridVerify
 
     # the method comparison: everything against the keyword matcher, paired on the same items
     uv run python evaluation/evaluate.py evaluation/labels_gold.csv --matcher full exact vendor acronym --baseline full
@@ -22,6 +23,11 @@ Metrics, all micro-averaged over (item, tool) pairs:
     recall (vocab)  labelled tools we found / labelled tools that exist in our O*NET vocabulary
     recall (all)    labelled tools we found / ALL labelled tools (out-of-vocabulary ones count as missed)
     F1              harmonic mean of precision and recall (vocab)
+    F1 (all)        harmonic mean of precision and recall (all): the fair score for open-vocabulary methods
+
+--lenient (opt-in, applies to every matcher alike): a found tool also counts as correct when its name matches
+an out-of-vocabulary label after squashing ("Amazon SageMaker" = "SageMaker", "Microsoft Azure" = "Azure").
+Strict scoring (the default) never credits out-of-vocabulary labels and is the official keyword result.
 95% intervals: bootstrap over items (2,000 resamples), because tools within one item are not independent.
 
 Paired comparison (printed whenever more than one matcher is given): for each matcher vs the
@@ -33,6 +39,7 @@ to decide whether a method is better.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib
 import random
 import sys
@@ -45,7 +52,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from skillradar.cv_parser import read_cv  # noqa: E402
-from skillradar.matcher import KeywordMatcher, squash  # noqa: E402
+from skillradar.matcher import KeywordMatcher, aliases, squash  # noqa: E402
 from skillradar.report import display_name  # noqa: E402
 from skillradar.variants import STEPS, make_matcher  # noqa: E402
 
@@ -117,9 +124,11 @@ class Counts:
     fp: int = 0
     fn_vocab: int = 0
     fn_oov: int = 0
+    tp_oov: int = 0             # part of tp that matched an out-of-vocabulary label (only with --lenient)
 
     def __add__(self, o):
-        return Counts(self.tp + o.tp, self.fp + o.fp, self.fn_vocab + o.fn_vocab, self.fn_oov + o.fn_oov)
+        return Counts(self.tp + o.tp, self.fp + o.fp, self.fn_vocab + o.fn_vocab, self.fn_oov + o.fn_oov,
+                      self.tp_oov + o.tp_oov)
 
     @property
     def precision(self):
@@ -127,7 +136,8 @@ class Counts:
 
     @property
     def recall_vocab(self):
-        return self.tp / (self.tp + self.fn_vocab) if self.tp + self.fn_vocab else float("nan")
+        tp = self.tp - self.tp_oov
+        return tp / (tp + self.fn_vocab) if tp + self.fn_vocab else float("nan")
 
     @property
     def recall_all(self):
@@ -139,12 +149,51 @@ class Counts:
         p, r = self.precision, self.recall_vocab
         return 2 * p * r / (p + r) if p + r else float("nan")
 
+    @property
+    def f1_all(self):
+        p, r = self.precision, self.recall_all
+        return 2 * p * r / (p + r) if p + r else float("nan")
+
 
 def score_item(found: set[str], truth: set[str]) -> Counts:
     oov = {t for t in truth if t.startswith(OOV)}
     in_vocab = truth - oov
     return Counts(tp=len(found & in_vocab), fp=len(found - in_vocab),
                   fn_vocab=len(in_vocab - found), fn_oov=len(oov))
+
+
+def _names(x: str) -> set[str]:
+    if x.startswith(OOV):
+        return {squash(x[len(OOV):])}
+    return {squash(x), squash(display_name(x))} | {squash(a) for a in aliases(x)}
+
+
+def same_tool(found: str, truth: str) -> bool:
+    """Lenient match. Two vocabulary tools must be identical. When either side is out of vocabulary,
+    the squashed names must be equal, or one must contain the other (both at least 4 characters,
+    so 'R' or 'Go' never match by containment)."""
+    if found == truth:
+        return True
+    if not (found.startswith(OOV) or truth.startswith(OOV)):
+        return False
+    a, b = _names(found), _names(truth)
+    return bool(a & b) or any(len(x) >= 4 and len(y) >= 4 and (x in y or y in x) for x in a for y in b)
+
+
+def score_item_lenient(found: set[str], truth: set[str]) -> Counts:
+    """One-to-one matching with same_tool(); exact matches are taken first."""
+    left = set(truth)
+    tp = tp_oov = fp = 0
+    for f in sorted(found, key=lambda f: (f not in truth, f)):
+        t = f if f in left else next((t for t in sorted(left) if same_tool(f, t)), None)
+        if t is None:
+            fp += 1
+            continue
+        left.discard(t)
+        tp += 1
+        tp_oov += t.startswith(OOV)
+    return Counts(tp=tp, fp=fp, fn_vocab=sum(not t.startswith(OOV) for t in left),
+                  fn_oov=sum(t.startswith(OOV) for t in left), tp_oov=tp_oov)
 
 
 def total(counts: list[Counts]) -> Counts:
@@ -272,7 +321,8 @@ def cmd_evaluate(args, software, norm):
         per_item = {r.item_id: (m.extract_tools(texts[r.item_id]), r.truth, r.side) for r in labels.itertuples()}
         details[spec] = (m, per_item)
         for side in sides:
-            cs = [score_item(f, t) for f, t, s in per_item.values() if side == "all" or s == side]
+            score = score_item_lenient if args.lenient else score_item
+            cs = [score(f, t) for f, t, s in per_item.values() if side == "all" or s == side]
             scored[(spec, side)] = cs
             if not cs:
                 continue
@@ -280,18 +330,21 @@ def cmd_evaluate(args, software, norm):
             p_lo, p_hi = bootstrap_ci(cs, "precision", n_boot=args.n_boot)
             r_lo, r_hi = bootstrap_ci(cs, "recall_vocab", n_boot=args.n_boot)
             f_lo, f_hi = bootstrap_ci(cs, "f1", n_boot=args.n_boot)
+            a_lo, a_hi = bootstrap_ci(cs, "recall_all", n_boot=args.n_boot)
+            fa_lo, fa_hi = bootstrap_ci(cs, "f1_all", n_boot=args.n_boot)
             rows.append({
                 "matcher": spec, "side": side, "items": len(cs),
                 "precision": f"{fmt(c.precision)} ({fmt(p_lo)}–{fmt(p_hi)})",
                 "recall (vocab)": f"{fmt(c.recall_vocab)} ({fmt(r_lo)}–{fmt(r_hi)})",
-                "recall (all)": fmt(c.recall_all),
+                "recall (all)": f"{fmt(c.recall_all)} ({fmt(a_lo)}–{fmt(a_hi)})",
                 "F1": f"{fmt(c.f1)} ({fmt(f_lo)}–{fmt(f_hi)})",
+                "F1 (all)": f"{fmt(c.f1_all)} ({fmt(fa_lo)}–{fmt(fa_hi)})",
                 "TP": c.tp, "FP": c.fp, "FN vocab": c.fn_vocab, "FN OOV": c.fn_oov,
             })
 
     n_truth = sum(len(t) for t in labels["truth"])
     n_oov = sum(1 for t in labels["truth"] for x in t if x.startswith(OOV))
-    print(f"split={args.split} · {len(labels)} items "
+    print(f"scoring={'lenient' if args.lenient else 'strict'} · split={args.split} · {len(labels)} items "
           f"({(labels['side'] == 'posting').sum()} postings, {(labels['side'] == 'cv').sum()} CVs) · "
           f"{n_truth} labelled tools, {n_oov} out of vocabulary ({n_oov / max(n_truth, 1):.0%})\n")
     print(md(pd.DataFrame(rows)))
@@ -312,16 +365,24 @@ def cmd_evaluate(args, software, norm):
                 f = paired_bootstrap(a, b, "f1", args.n_boot)
                 pr = paired_bootstrap(a, b, "precision", args.n_boot)
                 rc = paired_bootstrap(a, b, "recall_vocab", args.n_boot)
+                ra = paired_bootstrap(a, b, "recall_all", args.n_boot)
                 better, worse, tie = item_wins(a, b)
                 prow.append({
                     "compared": f"{spec} − {baseline}", "side": side, "items": len(a),
                     "ΔF1 (95% CI)": sd(f), "p": "–" if f.p != f.p else f"{f.p:.3f}",
-                    "Δprecision": sd(pr), "Δrecall (vocab)": sd(rc),
+                    "Δprecision": sd(pr), "Δrecall (vocab)": sd(rc), "Δrecall (all)": sd(ra),
                     "items better / worse / same": f"{better} / {worse} / {tie}",
                 })
         print(f"\nPaired comparison against '{baseline}' (bootstrap over items, both matchers scored on the "
               f"same resample; an interval that excludes 0 means a real difference on this kind of data)\n")
         print(md(pd.DataFrame(prow)))
+
+    costs = [{"matcher": spec, **{k: (round(v, 1) if isinstance(v, float) else v) for k, v in m.stats.items()},
+               "seconds per text": round(m.stats["seconds"] / max(m.stats["texts"], 1), 2)}
+             for spec, (m, _) in details.items() if hasattr(m, "stats")]
+    if costs:
+        print("\nLLM cost and behaviour (seconds and tokens are from the original API calls, also when cached)\n")
+        print(md(pd.DataFrame(costs)))
 
     if args.errors:
         for spec, (m, per_item) in details.items():
@@ -329,6 +390,9 @@ def cmd_evaluate(args, software, norm):
             for item, (found, truth, _) in per_item.items():
                 fp = found - truth
                 fn = {t for t in truth if t not in found}
+                if args.lenient:
+                    fp = {f for f in fp if not any(same_tool(f, t) for t in truth)}
+                    fn = {t for t in fn if not any(same_tool(f, t) for f in found)}
                 if not fp and not fn:
                     continue
                 fired = {}
@@ -338,7 +402,13 @@ def cmd_evaluate(args, software, norm):
                 print(f"{item}:")
                 if fp:
                     print("  false positive: " + ", ".join(
-                        f"{display_name(t)} (fired on {fired.get(t, '?')!r})" for t in sorted(fp)))
+                        (t[len(OOV):] + " [new tool]" if t.startswith(OOV) else display_name(t))
+                        + (f" (fired on {fired[t]!r})" if t in fired else "") for t in sorted(fp)))
+                info = getattr(m, "details", {}).get(hashlib.sha1(texts[item].encode()).hexdigest()[:10], {})
+                for k, label in (("rejected", "LLM rejected"), ("dropped", "quote not in text, dropped"),
+                                 ("embedding_links", "linked by embedding")):
+                    if info.get(k):
+                        print(f"  {label}: " + ", ".join(info[k]))
                 if fn:
                     print("  missed: " + ", ".join(
                         t[len(OOV):] + " [not in vocab]" if t.startswith(OOV) else display_name(t)
@@ -394,6 +464,8 @@ def main(argv=None):
     ap.add_argument("--n-boot", type=int, default=2000, help="bootstrap resamples (default 2000)")
     ap.add_argument("--split", choices=["test", "dev", "all"], default="test")
     ap.add_argument("--errors", action="store_true", help="list false positives / misses per item")
+    ap.add_argument("--lenient", action="store_true",
+                    help="also credit found tools that match an out-of-vocabulary label by name (all matchers alike)")
     ap.add_argument("--check", metavar="LABELS", help="show how label names map onto O*NET")
     ap.add_argument("--agreement", nargs=2, metavar=("A", "B"), help="agreement between two label files")
     args = ap.parse_args(argv)
