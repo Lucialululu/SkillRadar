@@ -1,0 +1,13 @@
+Settings of the frozen LLM evaluation (git tag llm-v1-frozen, 4 Nov 2026).
+Copy these lines into your .env (next to GEMINI_API_KEY) to reproduce evaluation/results/goal1_test_*.md.
+Cached answers live in data/llm_cache/ on the machine that ran it (gitignored).
+
+SKILLRADAR_LLM_MODEL=gemini-3.5-flash-lite
+SKILLRADAR_EMBED_MODEL=gemini-embedding-001
+SKILLRADAR_LINK_THRESHOLD=1.0
+SKILLRADAR_FEWSHOT=post_003,post_005
+
+Chosen on the dev split (evaluation/tune_llm.py, 8 dev postings without the two few-shot items):
+linking off gave the best F1 (all) for both LLMOnly (0.93) and Hybrid (0.92); every threshold that allowed
+embedding links lowered precision and recall.
+After the freeze only retry handling changed (timeouts are retried); answers and scoring are unchanged.

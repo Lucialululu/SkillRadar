@@ -1,64 +1,45 @@
 # SkillRadar: status & TODO
 
-*Last updated: week 8 (Fri 30 Oct 2026). Next session: week 9 (4 Nov).*
-*Final presentation 25 Nov · hand-in 2 Dec (confirm, see Open decisions) · defence 18 Dec.*
+*Last updated: week 9 (Wed 4 Nov 2026). Next session: week 10 (11 Nov).*
+*Final presentation 25 Nov · hand-in Wed 2 Dec (noon, confirm) · defence 18 Dec.*
+*Findings, story and material for the paper: [`report_draft.md`](report_draft.md).*
 
 ## Where we are in one paragraph
 
-The pipeline, the matcher (frozen as `matcher-v1-frozen`), the web prototype and the Goal 2 analysis all work and are on `main`. The test design for all three goals is done (week 6 material). **The Goal 1 labels are done** (both of us labelled all 40 postings, agreement F1 0.86, gold = union), and the **testing app is hosted** with a feedback form that saves to a shared Google Sheet. **Still missing:** the Goal 1 evaluation run, the LLM comparison, the user tests themselves (pilot + peer trial), the literature review and the report.
+Goal 1 on postings and Goal 2 are **done and frozen**; the prototype has been **redesigned after the first pilot feedback**.
+On 30 held-out postings, the frozen keyword matcher reaches precision 0.97 and recall 0.94 on tools in our vocabulary,
+but finds only 73% of *all* labelled tools, because 23% are missing from O*NET. The LLM methods (Gemini, frozen as
+`llm-v1-frozen`) close most of that gap: the hybrid finds 95% of all tools (+0.22, CI +0.15 to +0.29) at unchanged precision.
+**Still missing:** CV labels + CV evaluation, the peer trial (6–8 students), matcher v2 for the app, literature reading,
+and the report.
 
-## Changes in direction (decided week 8)
+## Done in week 9 (4 Nov)
 
-1. **We are now 2 people.** Report max **3 pages** (Playbook rule for 2-person groups), a contribution appendix with an equal split, a peer trial with 6–8 people, and the cuts listed below.
-2. **No trends.** Both datasets are single snapshots; Jan vs Apr differences are scraper artefacts. Goal 2 = *robust current demand* (replication across datasets) + *entry level vs senior*.
-3. **"Skill" = a named tool or technology** (O*NET Hot Technology / In Demand). Said in the README, the app and the report.
-4. **A pretrained model goes on top of the taxonomy, not instead of it.** O*NET stays the vocabulary (*what* we map to); the model decides in context whether text really refers to a tool (*how* we map).
-   - Hybrid design: the keyword matcher proposes candidates, a pretrained LLM verifies each one in context (rejects "Go further", "excel at communication", company names) and may add implicit mentions. It may only answer with O*NET tool names and must quote the evidence.
-   - Used on CVs and the labelled evaluation items. The 1M+ postings keep the keyword matcher.
-   - **Method study:** keyword vs LLM-only vs hybrid, on the same held-out labels. This replaces "keyword vs taxonomy".
-5. **Human-centred design is part of the prototype:**
-   - the user confirms or corrects the found tools before the report (human in the loop)
-   - evidence phrases (explainability)
-   - 95% ranges (uncertainty)
-   - CVs held in memory only (privacy)
-6. **Prototype = Streamlit web app.** The CLI stays as a developer tool.
+- [x] **Goal 1 keyword evaluation** on the test split: P 0.97 · R(vocab) 0.94 · R(all) 0.73 · ablation table → `evaluation/results/goal1_test_ablation.md`
+- [x] **Out-of-vocabulary analysis** of the 47 test misses (rough, to verify by hand): ~13 in our vocabulary but no alias reaches them (Azure ×4, Looker, SPSS), ~11 in O\*NET but not Hot/In Demand (GCP, BigQuery, Keras), ~23 not in O\*NET (Databricks ×3, UiPath, Dask)
+- [x] **LLM matchers** (`skillradar/llm_matcher.py`): LLMOnly, Hybrid, HybridVerify; grounding check; linking; few-shot from dev; cached answers; tests with a fake client
+- [x] **Dev tuning** (`evaluation/tune_llm.py`): embedding linking off (every link was a related but wrong tool); grounding check relaxed to "quote or name in text" after it dropped real tools
+- [x] **Frozen** as `llm-v1-frozen` (settings: `evaluation/llm_frozen_settings.txt`) and **evaluated on the test split** → `evaluation/results/goal1_test_lenient.md` (main) and `goal1_test_strict.md` (appendix)
+- [x] **App redesign** after pilot feedback: have-first report, plain-language key for the 95% ranges, radar chart of demand, coverage meter, new look; entry-vs-senior tag only when significant; testing app shows 5 steps
+- [x] Retry on rate limits and timeouts; key read from a gitignored `.env`
 
-## Current state
+## Results (for the report)
 
-| Part | Status | Notes |
-|---|---|---|
-| Data (2 Kaggle + O*NET) | ✅ | Duplicate ads now removed when loading (primary 4,049, secondary 342) |
-| Keyword matcher | ✅ frozen | `matcher-v1-frozen`: 301 tools, 448 aliases, MANUAL_DROP = Google, Facebook |
-| Role tagging | ✅ fixed | Word boundaries; before, 31% of "ux designer" postings were building/circuit design |
-| CV parser, demand, report, CLI | ✅ | |
-| Web prototype `app.py` | ✅ v1 | Confirm/correct step, evidence, ranges, entry vs senior column, facilitator panel. Role-count lag on step 2 fixed. **Not tested with users yet** |
-| Testing app `app_testing.py` | ✅ hosted | Streamlit Community Cloud; step 5 feedback form (6 ratings + 2 open questions + correction counts) → Google Sheet. Setup: `user_testing/README_TESTING.md` |
-| Goal 1 evaluation setup | ✅ | `evaluation/`: 40 postings (10 dev / 30 test), guidelines, `evaluate.py` (P/R, bootstrap CIs, agreement, ablation) |
-| Goal 1 labels | ✅ | Both labelled all 40 postings: F1 0.86, κ 0.90. `labels_gold.csv` = union (`merge_gold.py`), 6.8 tools per posting on average, 3 postings with none. CV labels still to do |
-| Goal 2 analysis | ✅ | `analysis/goal2.py`, results below |
-| LLM verifier | ❌ | Week 9 |
-| User tests (pilot + trial) | ⚠️ | Protocol (`evaluation/user_study.md`) and hosted testing app ready; no sessions yet |
-| Literature review | ❌ | Reading list below |
-| Report (ACM, 3 pages) | ❌ | Skeleton this week |
-| Trello | ❌ | |
-| Tests | ✅ 97 passed, 1 xfail | Verification only, not accuracy |
+**Goal 1, postings (30 held-out test postings, lenient scoring; keyword numbers are identical under strict scoring)**
 
-## Course weeks 6–8: what was expected, what we have
+| Method | Precision | Recall (vocab) | Recall (all) | F1 (all) | s / posting |
+|---|---|---|---|---|---|
+| Keyword `full` (frozen) | 0.97 (0.95–0.99) | 0.94 (0.90–0.98) | 0.73 (0.64–0.81) | 0.83 | ≈ 0 |
+| LLM only | 0.98 (0.97–1.00) | 0.96 | 0.92 (0.88–0.96) | 0.95 | 21.6 |
+| Hybrid | 0.97 (0.95–0.99) | 0.97 | 0.95 (0.92–0.97) | 0.96 | 17.7 |
+| Hybrid, verify only | 0.98 (0.96–1.00) | 0.94 | 0.73 | 0.83 | 17.7 |
 
-| Week | Expected | Status |
-|---|---|---|
-| 6 · test methods | Test plan tied to the goals (validity, reliability, bias) | ✅ Goals with tests and targets; blind held-out labels; frozen matcher; two labellers; bootstrap CIs; duplicate removal; limitations stated |
-| 7 · peer testing | Testable prototype in front of peers | ⚠️ Prototype ready since 28 Oct, testing app hosted 30 Oct; no user tests yet |
-| 8 · scientific writing + peer testing | Start the paper, keep testing | ❌ Report not started, no pilot yet |
-
-## Results so far (for the report)
-
-**Data quality findings**
-- Text matcher vs the dataset's own skill labels (DS): 23 of the top 25 tools within ~3 points. Exceptions: Power BI and Hadoop (labels higher).
-- Reposted ads: 4,049 duplicates in primary and 342 in secondary target-role postings. They distorted percentages and the comparisons, so they're now removed.
-- UX role pattern bug: "ui" matched inside "Building", "Circuit" etc. 31% of UX postings were wrong. Fixed.
-- `MANUAL_DROP` from evidence (`scripts/alias_snippets.py`, 20 snippets per alias): Google 0/20 a tool, Facebook 17/20 social media or company → dropped. C 19/20 and Go 20/20 the language → kept.
-- Jan vs Apr: SE had 15 of 20 tools "significant", 14 of them down → scraper difference, not market. No trend claims.
+- Hybrid − keyword: Δrecall(all) **+0.22 (+0.15 to +0.29)**, Δprecision −0.00 (−0.02 to +0.02), ΔF1(vocab) +0.01 (n.s.)
+- Verify-only rejected 1 keyword match in 30 postings → on postings the LLM adds **coverage, not correction**
+- Grounding check: 1 tool dropped (hybrid), 1 kept by name; embedding linking: off (dev); LLM answers kept 41–42 tools outside O\*NET
+- Strict scoring counts every out-of-vocabulary tool as wrong, so the LLM methods drop to precision 0.77–0.78 there (39 of LLMOnly's 42 strict "false positives" are correct new tools). Report lenient as main, strict in the appendix, and **check the lenient name matches by hand**
+- Keyword ablation (strict, vs exact): vendor +0.20 recall(vocab), acronym +0.39, full +0.38 with half the false positives (8 → 4); all p < 0.001
+- Labels: two labellers, agreement F1 0.86, κ 0.90; gold = union; 6.8 tools per posting; 23% outside our vocabulary
 
 **Goal 2 (after duplicate removal)**
 
@@ -79,37 +60,31 @@ The pipeline, the matcher (frozen as `matcher-v1-frozen`), the web prototype and
   - Conclusion: for most tools the overall ranking also holds for students.
 - The low DA replication seen earlier (0.54) came from duplicate ads, not from level mix.
 
-## THIS WEEK (until 4 Nov)
+**Goal 3**: two feedback rows in the Google Sheet (ranges unclear; put matched tools first; looks AI-generated) → redesign. Peer trial still to run.
 
-- [x] **Labelling.** Both labelled all 40 postings independently (F1 0.86, κ 0.90); `labels_gold.csv` = union of both.
-- [x] **Peer-trial protocol** in `evaluation/user_study.md`: tasks, think-aloud, consent text, questionnaire, what we log.
-- [x] **Testing app hosted** (`app_testing.py`, Streamlit Cloud) with feedback saved to the Google Sheet.
-- [ ] **Practice submission** on the hosted app (`TEST01`) → check the row appears in the sheet → delete it.
-- [ ] **Pilot the app with 2 classmates** (think-aloud, ~15 min each).
-  - Tasks: "upload your CV, check the tools, tell us what you would learn next and why".
-  - Ratings, comments and correction counts: the feedback form (Google Sheet). Observations and task success: `evaluation/pilot_notes.md` (no names).
-  - Ask for CVs for the evaluation set (consent, neutral filenames, delete after the project).
-- [ ] **Tell the teachers** about the lost member, the new scope and goals, and ask the Open decisions below.
-- [ ] **Overleaf** with the ACM sigconf template + the course section template. Paste in the goals, the Goal 2 table, the data-quality findings and the label agreement.
-- [ ] **Trello** (To Do / Doing / Done / Stuck) from this file, with a name on every card.
-- [ ] **A: update the notebook findings tables** with the 28 Oct rerun numbers. Add the duplicate and UX findings. Fix "v2 is larger with validated skills" → "tool-level labels (not validated)". Jan vs Apr row decision → "No trend claims. Goal 2 = replication + entry vs senior".
-- [ ] **A: commit Goal 2 results:** `analysis/results/` + `goal2_output_v2.txt` (move it to `analysis/results/`). Delete the old `goal2_output.txt`.
+## THIS WEEK (until 11 Nov)
 
-## Plan, weeks 9–13
+- [ ] **Commit + push** this TODO, `report_draft.md`, the README update and `evaluation/llm_frozen_settings.txt`
+- [ ] **Check the lenient matches by hand**: run `evaluate.py ... --lenient --errors` and the strict run, and list which out-of-vocabulary names were credited; any doubtful pair → note it in the report
+- [ ] **CV labels**: both of us label 6–10 CVs blind (`GUIDELINES.md`, neutral filenames, consent), `split=test`; agreement on CVs as for postings
+- [ ] **Billing** on the Gemini key (paid-tier data terms) before any CV goes through the LLM; set a budget alert
+- [ ] **CV evaluation**: the same `evaluate.py` command with the CV rows (keyword + LLM methods, frozen settings)
+- [ ] **Recruit** 6–8 students for the peer trial in week 10; book slots
+- [ ] **Tell the teachers**: lost member and new scope, results so far, and the open decisions below
+- [ ] **Overleaf** ACM sigconf skeleton with the template sections; paste in the two result tables
+- [ ] **Delete merged branches** on GitHub (`cv_pipeline`, `skill_labels`, `app_fixes_and_notes`, `app_ui_update`, `llm_matcher`)
+- [ ] Practice submission `TEST01` on the hosted testing app → check the row → delete it
+
+## Plan, weeks 10–13
 
 | Week | Deliverables |
 |---|---|
-| **9** (4 Nov) | **LLM verifier** `skillradar/llm_matcher.py`: same `extract_tools(text)` interface, built as `Class(software_df)`; prompt = text + keyword candidates + O*NET list; JSON answer with an evidence quote; quotes not found in the text are rejected automatically. Plus LLM-only and hybrid variants · CV labels (≥ 6 test CVs) · fixes from the pilot |
-| **10** (11 Nov) | **Goal 1 evaluation run:** `evaluate.py labels_gold.csv --matcher exact vendor acronym full <llm> <hybrid>` on held-out postings + CVs · **peer trial** with 6–8 students · literature section drafted |
-| **11** (18 Nov) | Analysis + figures · full report draft · fix the top usability issues |
+| **10** (11 Nov) | Peer trial with 6–8 students · CV evaluation · **matcher v2** from the LLM's findings (frequent out-of-vocabulary tools as aliases, Azure / EC2 / Power BI fixes) → rebuild posting tables → rerun `goal2.py` · literature read and noted |
+| **11** (18 Nov) | Peer-trial analysis · figures · full report draft · top usability fixes |
 | **12** (25 Nov) | Final presentation · report polish |
-| **13** (2 Dec) | Hand-in: report PDF, appendices (contributions, questionnaire, prompts, label guidelines), code zip |
+| **13** (2 Dec) | Hand-in: report PDF, appendices (contributions, AI statement, questionnaire, prompts, label guidelines, strict tables), code zip |
 
-Peer-trial measures:
-- task success without help
-- perceived accuracy (does each "missing" tool really feel missing?)
-- usefulness and trust (Likert)
-- **correction rate** (saved automatically with each feedback row): removed tools = false positives, added tools = misses. This gives a second, real-world Goal 1 measurement.
+Matcher v2 rule: v1 stays the reported Goal 1 result. v2 is "after evaluation we fixed …", used by the app and for the Goal 2 rerun.
 
 ## Work split (2 people)
 
@@ -118,16 +93,20 @@ Peer-trial measures:
 - **Both:** labelling (two labellers needed for agreement), literature, presentation.
 - Everyone commits **their own work under their own account** (contribution appendix).
 
-## Literature (read abstract, figures, results; 2–3 lines each in `notes/literature_notes.md`)
+## Literature (read the relevant sections before citing; 2–3 lines each in `notes/literature_notes.md`)
 
-| Paper | What we take from it |
+| Paper | Where it goes in the report |
 |---|---|
-| Zhang, Jensen, Sonniks, Plank (2022). *SkillSpan: Hard and Soft Skill Extraction from English Job Postings.* NAACL | Standard dataset and task definition; domain-adapted models beat general ones. Our "tools only" scope vs their hard + soft skills |
-| Zhang, van der Goot, Plank (2024). *Entity Linking in the Job Market Domain.* | Linking mentions to ESCO is hard (best Acc@1 ≈ 24%). Supports a narrow, explicit tool vocabulary |
-| Clavié & Soulié (2023). *Large Language Models as Batteries-Included Zero-Shot ESCO Skills Matchers.* arXiv 2307.03539 | Candidate generation + LLM re-ranking beat the earlier state of the art. **Our hybrid design** |
-| Nguyen, Zhang, Montariol, Bosselut (2024). *Rethinking Skill Extraction in the Job Market Domain using LLMs.* NLP4HR | Few-shot LLMs are below supervised models overall but better on complex mentions. Why the LLM verifies rather than extracts alone |
-| *Efficient Text Encoders for Labor Market Analysis* (2025, arXiv 2505.24640); *NLP for Human Resources: A Survey* (2024, arXiv 2410.16498) | Related-work framing; embeddings as an alternative mapping method |
-| One HCAI paper on explanations / trust / human-in-the-loop correction in decision support (to find) | Grounds the confirm/correct step, evidence phrases and uncertainty display |
+| Clavié & Soulié 2023, LLMs as zero-shot ESCO skill matchers | Background + Prototype: our hybrid (candidates + LLM) follows their design |
+| Nguyen et al. 2024, Rethinking skill extraction with LLMs | Background + Discussion: LLMs help where fixed methods fail; our "coverage, not correction" result |
+| Zhang et al. 2022, SkillSpan | Background: task definition, annotation and agreement reporting; we do tools only |
+| Zhang, van der Goot & Plank 2024, Entity linking in the job market | Discussion: linking to a large taxonomy is hard; our embedding-linking failures |
+| NLP for HR survey 2024 · Efficient Text Encoders 2025 | Background framing; embeddings as a linking method |
+| Amershi et al. 2019, Guidelines for Human-AI Interaction | Prototype: confirm step, evidence, uncertainty display |
+| Bansal et al. 2021, Does the Whole Exceed its Parts? | Discussion: explanations can raise trust in wrong output → our correction-rate measure |
+| Deming & Kahn 2018 · Hershbein & Kahn 2018 | Background: job ads as a measure of demand, and their representativeness |
+| Decorte et al. 2023, synthetic training data with LLMs | Optional: the "train a model" road we did not take, and why |
+| O\*NET 31.0, ESCO, the two Kaggle datasets | Data (web/dataset citations) |
 
 ## Course learning objectives → where we cover them
 
@@ -142,50 +121,37 @@ Peer-trial measures:
 | Test whether goals are reached | P/R + agreement + ablation, Spearman/bootstrap, peer trial |
 | Scientific paper | ACM, 3 pages |
 
-## Cut / postponed
-
-- Trends / backtest (impossible with our data; reported as a negative finding)
-- Fine-tuning, a concept/"methods" vocabulary, learning-path stretch goal, single job-ad mode
-- External time series (future work)
-
 ## Open decisions (ask the teachers)
 
-1. **Hand-in date:** the Playbook says both "2 Dec" and "noon Wednesday the week after the last lecture".
-2. **LLM on CVs:** local open model (privacy, weaker) vs API (stronger, needs consent or anonymised CVs)?
-3. **Is 40 postings + ~6–10 CVs enough** for the evaluation?
-4. Default dataset in the app for students: entry level (small, US) or all levels (large)?
+1. Hand-in: Wed 2 Dec at noon? (The Playbook gives both "2 Dec" and "noon Wednesday the week after the last lecture".)
+2. LLM on CVs: is the paid API with consent fine, or should CVs be anonymised first?
+3. Is 30 test postings + 6–10 CVs enough for Goal 1?
+4. Lenient vs strict scoring as the main table for open-vocabulary methods (we plan lenient, strict in the appendix).
 5. Is ρ = 0.80 with CI 0.66–0.88 for data scientists "met"? (We report the CI and don't move the target.)
 
 ## Needs refinement
 
-- [ ] App: "Entry vs senior" mostly says "similar" → only show it when significant, and hide it for roles with < 30 junior postings
-- [ ] App + report: drop the O*NET flag column (it says "Hot Technology + In Demand" on almost every row)
-- [ ] "bash" lowercase missed (CASE_SENSITIVE) · Jupyter/ChatGPT outside the vocabulary · Claude/Conda/uv not in O*NET (counted as out-of-vocabulary in the eval)
-- [ ] "Go further" false positive (xfail test). Check whether the LLM verifier fixes it
+- [x] App: entry vs senior tag only when significant
+- [x] App: O\*NET flag column removed (CLI text report still has it)
+- [x] Testing app: step indicator shows 5 steps
+- [ ] Matcher v2: Azure (blocked by `NO_SHORT`), EC2 (acronym rule misses "Elastic Compute Cloud"), Power BI miss in post_009, GIS false positive
+- [ ] "bash" lowercase missed · Jupyter / ChatGPT / uv outside the vocabulary
+- [ ] "Go further" false positive (xfail test): the hybrid could reject it in context, but the app uses keywords only
 - [ ] Power BI / Hadoop: dataset labels higher than our text matcher. Look at 5 postings each
 - [ ] Try a two-column PDF and a .docx CV in the app
-- [ ] Two licence TODOs in the README · secondary notebook still says "notebooks/" and "data_inspection.ipynb"
-- [ ] Testing app: step headers still say "Step N of 4", but there are now 5 steps
-- [ ] `evaluation/peer_trial_results.csv` is an empty manual template; the Google Sheet replaces it. Delete it, or use it only for the facilitator's task-success columns
+- [ ] Two licence TODOs in the README · secondary notebook still says "notebooks/"
+- [ ] `evaluation/peer_trial_results.csv`: delete, or keep only for the facilitator's task-success columns
 - [ ] `app_testing.py` is a copy of `app.py`: fixes to one must be copied to the other
-- [ ] Before a final evaluation run, check that `merge_gold.py` is not rerun (it overwrites the manual fixes in `labels_gold.csv`)
+- [ ] Never rerun `merge_gold.py` (it overwrites manual fixes in `labels_gold.csv`)
 
 ## Known limitations (for the report)
 
 - Single snapshots (Jan/Apr 2024), no trends · ~85% US data, our users are in Denmark · no entry level in the primary dataset; small junior samples in the secondary
-- Tools only, not general skills · judges what the CV says, not what the person knows · O*NET lags behind new tools
-- Duplicate removal catches identical ad texts only; near-duplicates with edited text may remain
-
-## How to run
-
-    uv sync && uv run pytest
-    uv run python main.py build --source primary          # and --source secondary; rebuild after any matcher change
-    uv run streamlit run app.py                           # or app_testing.py (with the feedback form)
-    uv run python analysis/goal2.py > analysis/results/goal2_output.txt
-    uv run python evaluation/evaluate.py --check evaluation/labels_<name>.csv
-    uv run python evaluation/evaluate.py --agreement evaluation/labels_A.csv evaluation/labels_B.csv
-    uv run python evaluation/evaluate.py evaluation/labels_gold.csv
-    uv run python main.py report data/cvs/cv01.pdf "data scientist" --explain
+- Tools only, not general skills · judges what the CV says, not what the person knows · O\*NET lags behind new tools (23% of labelled tools are outside our vocabulary)
+- Duplicate removal catches identical ad texts only
+- Goal 1: 30 test postings, one role (data scientist), gold = union of two labellers; lenient scoring uses name matching for out-of-vocabulary tools
+- LLM: one model at temperature 0, answers cached; model names change quickly (2.5-flash was retired during the project), so the exact model is part of the result
+- The app's demand data stays keyword-based: LLM extraction at ~20 s per posting is not feasible for 1.3 M postings
 
 ## Sources:
 - [SkillSpan (NAACL 2022)](https://aclanthology.org/2022.naacl-main.366)
