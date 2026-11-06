@@ -49,3 +49,17 @@ def test_report_renders_have_first_with_range_key(app):
     page = "".join(m.value for m in at.markdown)
     assert page.index("Already on your CV") < page.index("Missing, most requested first")
     assert "the 95% range" in page and 'class="sr-radar"' in page
+
+
+@pytest.mark.parametrize("app", ["app.py", "app_testing.py"])
+def test_report_lists_every_job_with_have_and_missing(app):
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(ROOT / app), default_timeout=120)
+    at.session_state.step = 4
+    at.session_state.cv_text, at.session_state.cv_name, at.session_state.cv_key = "Python, SQL and Tableau", "cv.txt", "t"
+    at.run()
+    assert not at.exception
+    page = "".join(m.value for m in at.markdown)
+    assert "Which jobs can you apply for?" in page
+    assert page.count('class="sr-job ') == 5
+    assert page.index("Which jobs can you apply for?") < page.index("Already on your CV")

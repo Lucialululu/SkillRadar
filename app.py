@@ -28,7 +28,7 @@ from skillradar import ui
 from skillradar.cv_parser import read_cv_bytes
 from skillradar.demand import PROCESSED, ROLE_PATTERNS, demand_table, filter_postings, load_posting_tools
 from skillradar.matcher import KeywordMatcher
-from skillradar.report import build_report, display_name, format_report
+from skillradar.report import APPLY_AT, build_report, display_name, format_report, job_matches
 from skillradar.robustness import rank_intervals, replication, seniority
 
 ONET = Path("data/onet/software_skills.csv")
@@ -274,6 +274,23 @@ def step_check() -> None:
 # Step 4: Report
 # ---------------------------------------------------------------------------
 
+def job_overview(cv_tools: set[str]) -> None:
+    """Which jobs can you apply for? Every role, best match first, with % you have and % you miss."""
+    _, _, source, levels = DATASETS[ss.dataset]
+    pt = get_postings(source)
+    demands = {r: demand_table(pt, r, levels=levels) for r in ROLE_PATTERNS}
+    matches = job_matches(cv_tools, demands, top=TOP, min_share=0.05)
+    can = [ROLE_NAMES.get(m.role, m.role) for m in matches if m.verdict == "You can apply"]
+    sub = ("You can apply for: " + ", ".join(can) + "." if can
+           else "No role is a strong match yet. The jobs closest to your CV are at the top.")
+    html(ui.section_title("Which jobs can you apply for?",
+                          sub + f" “You can apply” means your CV has at least {APPLY_AT:.0%} of what the job asks for."))
+    html(ui.job_cards([ui.job_card(ROLE_NAMES.get(m.role, m.role.capitalize()), m.n_postings, m.have_pct,
+                                   [display_name(t) for t in m.have], [display_name(t) for t in m.missing],
+                                   m.verdict, chosen=m.role == ss.role) for m in matches]))
+    st.write("")
+
+
 def step_report() -> None:
     title, desc, source, levels = DATASETS[ss.dataset]
     role = ss.role
@@ -301,6 +318,9 @@ def step_report() -> None:
     html(ui.header("", title_txt, f"Compared with {n:,} {role} postings ({note})."))
     if rep.small_sample:
         st.warning(f"Only {n} postings: the percentages are rough, so look at the ranges.")
+
+    job_overview(cv_tools)
+    html(ui.section_title(f"Your chosen role: {ROLE_NAMES.get(role, role.capitalize())}"))
 
     left, right = st.columns([1, 1.35], gap="large")
     with left:

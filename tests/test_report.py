@@ -62,3 +62,24 @@ def test_common_cv_tool_outside_top_is_not_lost():
     rep = build_report({"SQL"}, _demand(), top=1)
     assert rep.other_cv_tools == [("SQL", 0.6)]
     assert "SQL (60%)" in format_report(rep)
+
+def test_job_matches_ranks_roles_and_splits_have_and_missing():
+    from skillradar.demand import demand_from_sets
+    from skillradar.report import job_matches
+
+    def demand(sets, role):
+        d = demand_from_sets(sets)
+        d.attrs["role"] = role
+        return d
+
+    demands = {
+        "data analyst": demand([{"SQL", "Excel"}, {"SQL"}, {"Excel", "Tableau"}], "data analyst"),
+        "ml engineer": demand([{"PyTorch", "Docker"}, {"PyTorch"}], "ml engineer"),
+        "empty": demand([], "empty"),
+    }
+    m = job_matches({"SQL", "Excel"}, demands)
+    assert [x.role for x in m] == ["data analyst", "ml engineer"]        # best match first, empty role left out
+    da = m[0]
+    assert da.have == ["Excel", "SQL"] and da.missing == ["Tableau"]
+    assert abs(da.have_pct + da.missing_pct - 1) < 1e-9
+    assert da.verdict == "You can apply" and m[1].verdict == "Not yet"

@@ -15,6 +15,8 @@ import pandas as pd
 from skillradar.matcher import KEEP, NO_SHORT, VENDORS, is_abbrev
 
 SMALL_SAMPLE = 100   # warn below this many postings
+APPLY_AT = 0.50      # job overview: "You can apply" from this coverage up
+CLOSE_AT = 0.30      # ... "Almost there" from this coverage up
 
 
 def display_name(tool: str) -> str:
@@ -74,6 +76,46 @@ def build_report(cv_tools: set[str], demand: pd.DataFrame, top: int = 15,
         have=ranked[ranked["on_cv"]].drop(columns="on_cv").reset_index(drop=True),
         other_cv_tools=other, note=note,
     )
+
+
+@dataclass
+class JobMatch:
+    """One row of the job overview: how well the CV fits one role."""
+    role: str
+    n_postings: int
+    have_pct: float                                   # = coverage of the role's top tools, 0..1
+    have: list[str]                                   # top tools on the CV, most requested first
+    missing: list[str]                                # top tools not on the CV, most requested first
+
+    @property
+    def missing_pct(self) -> float:
+        return 1.0 - self.have_pct
+
+    @property
+    def verdict(self) -> str:
+        if self.have_pct >= APPLY_AT:
+            return "You can apply"
+        if self.have_pct >= CLOSE_AT:
+            return "Almost there"
+        return "Not yet"
+
+
+def job_matches(cv_tools: set[str], demands: dict[str, pd.DataFrame], top: int = 15,
+                min_share: float = 0.05) -> list[JobMatch]:
+    """Compare the CV with every role at once, best match first.
+
+    demands: role -> demand_table(...) for that role. Uses the same coverage as build_report,
+    so the percentage for the chosen role matches the big score on the report page.
+    Roles with no postings are left out.
+    """
+    out = []
+    for role, demand in demands.items():
+        if demand.attrs.get("n_postings", 0) == 0:
+            continue
+        rep = build_report(cv_tools, demand, top=top, min_share=min_share)
+        out.append(JobMatch(role=role, n_postings=rep.n_postings, have_pct=rep.coverage,
+                            have=list(rep.have["tool"]), missing=list(rep.missing["tool"])))
+    return sorted(out, key=lambda m: (-m.have_pct, m.role))
 
 
 def _flag(row) -> str:

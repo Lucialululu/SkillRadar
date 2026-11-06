@@ -56,3 +56,10 @@ def test_stats_and_chips():
     assert "<b class=\"\">7</b>" in s and "<b class=\"teal\">1</b>" in s and "<b class=\"amber\">2</b>" in s
     c = ui.chips([("Tableau", "22% · added by you", True), ("<x>", "1%", False)])
     assert 'sr-chip added' in c and "&lt;x&gt;" in c
+
+
+def test_job_card_shows_have_and_missing_percentages_and_escapes():
+    html_out = ui.job_card("Data <b>analyst", 120, 0.6, ["SQL", "Excel"], ["Tableau"], "You can apply", chosen=True)
+    assert "60%" in html_out and "40%" in html_out
+    assert "You have" in html_out and "You are missing" in html_out
+    assert "&lt;b&gt;" in html_out and "chosen" in html_out

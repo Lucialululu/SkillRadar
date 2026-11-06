@@ -200,6 +200,20 @@ html, body, .stApp { font-family: 'Instrument Sans', ui-sans-serif, system-ui, -
 .sr-chip.added { border-color: var(--teal-line); }
 .sr-chip.added span { color: var(--teal); }
 
+/* job overview: which jobs can you apply for? */
+.sr-jobs { display: grid; gap: 10px; margin: 4px 0 10px; }
+.sr-job { padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line2); background: rgba(5,9,13,.6); }
+.sr-job.chosen { border-color: var(--teal-line); background: var(--raised); }
+.sr-job .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.sr-job .name { color: var(--ink); font-size: 18px; font-weight: 600; }
+.sr-job .name small { color: var(--ink3); font-size: 13px; font-weight: 400; margin-left: 8px; }
+.sr-job .bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--amber-soft); margin: 0 0 10px; }
+.sr-job .bar i { display: block; height: 100%; background: var(--teal); }
+.sr-job .line { color: var(--ink2); font-size: 14.5px; line-height: 1.5; margin: 2px 0; }
+.sr-job .line b.teal { color: var(--teal); font-variant-numeric: tabular-nums; }
+.sr-job .line b.amber { color: var(--amber); font-variant-numeric: tabular-nums; }
+.sr-tag.go { background: var(--teal-soft); color: var(--teal); }
+
 /* ---------- Streamlit widgets in the same style ---------- */
 div.stButton > button, div.stDownloadButton > button, div.stFormSubmitButton > button {
   border-radius: 10px; padding: 0.62rem 1.4rem; font-weight: 600; border: 1px solid var(--line2); background: rgba(5,9,13,.6); color: var(--ink);
@@ -455,3 +469,28 @@ def chips(items: list[tuple[str, str, bool]]) -> str:
     """(name, detail, added_by_user)"""
     return '<div class="sr-chips">' + "".join(
         f'<div class="sr-chip {"added" if added else ""}">{e(n)}<span>{e(d)}</span></div>' for n, d, added in items) + "</div>"
+
+
+def _tool_list(names: list[str], limit: int = 6) -> str:
+    if not names:
+        return "none"
+    shown = ", ".join(e(n) for n in names[:limit])
+    return shown + (f" and {len(names) - limit} more" if len(names) > limit else "")
+
+
+def job_card(name: str, n_postings: int, have_pct: float, have: list[str], missing: list[str],
+             verdict: str, chosen: bool = False) -> str:
+    """One job in the overview: job, % of its skills you have (and which), % you are missing (and which)."""
+    tag = "go" if verdict == "You can apply" else "grey" if verdict == "Not yet" else ""
+    chosen_txt = " · your chosen role" if chosen else ""
+    return (f'<div class="sr-job {"chosen" if chosen else ""}"><div class="head">'
+            f'<div class="name">{e(name)}<small>{n_postings:,} postings{chosen_txt}</small></div>'
+            f'<div class="sr-tag {tag}">{e(verdict)}</div></div>'
+            f'<div class="bar" aria-hidden="true"><i style="width:{pct(have_pct)}%"></i></div>'
+            f'<div class="line">You have <b class="teal">{have_pct:.0%}</b> of the skills for this job: {_tool_list(have)}</div>'
+            f'<div class="line">You are missing <b class="amber">{1 - have_pct:.0%}</b> of the skills for this job: '
+            f'{_tool_list(missing)}</div></div>')
+
+
+def job_cards(cards: list[str]) -> str:
+    return '<div class="sr-jobs">' + "".join(cards) + "</div>"

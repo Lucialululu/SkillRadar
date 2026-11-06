@@ -17,7 +17,7 @@ from skillradar import ui
 from skillradar.cv_parser import read_cv_bytes
 from skillradar.demand import PROCESSED, ROLE_PATTERNS, demand_table, filter_postings, load_posting_tools
 from skillradar.matcher import KeywordMatcher
-from skillradar.report import build_report, display_name, format_report
+from skillradar.report import APPLY_AT, build_report, display_name, format_report, job_matches
 from skillradar.robustness import rank_intervals, replication, seniority
 from skillradar.study_logging import save_response, sheet_from_secrets
 
@@ -285,7 +285,10 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
     html(ui.header("Step 5 of 5: your feedback", "How was it?", "Please fill this in only if you are taking part in the SkillRadar study. "
                    "It takes about two minutes."))
     if ss.study_saved:
-        st.success("Your feedback has already been submitted for this session.")
+        st.success("Your feedback is now saved, thank you for the feedback.")
+        if ss.get("study_where") == "csv":   # tell the facilitator; a hosted server's disk is wiped
+            st.caption("Saved on this server only, not in the study's Google Sheet "
+                       "(no [gsheets] secrets found).")
         return
     with st.form("study_feedback"):
         participant_id = st.text_input("Anonymous participant code (given by researcher)", max_chars=30)
@@ -332,16 +335,30 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
                 except Exception as err:            # disk full, sheet not shared, no internet, ...
                     st.error(f"Could not save your feedback ({type(err).__name__}). Please tell the study facilitator.")
                 else:
-                    ss.study_saved = True
-                    st.success("Feedback saved. Thank you!")
-                    if where == "csv":                # tell the facilitator; a hosted server's disk is wiped
-                        st.caption("Saved on this server only, not in the study's Google Sheet "
-                                   "(no [gsheets] secrets found).")
+                    ss.study_saved, ss.study_where = True, where
+                    st.rerun()                        # hide the form; the thank-you message is shown above
 
 
 # ---------------------------------------------------------------------------
 # Step 4: Report
 # ---------------------------------------------------------------------------
+
+def job_overview(cv_tools: set[str]) -> None:
+    """Which jobs can you apply for? Every role, best match first, with % you have and % you miss."""
+    _, _, source, levels = DATASETS[ss.dataset]
+    pt = get_postings(source)
+    demands = {r: demand_table(pt, r, levels=levels) for r in ROLE_PATTERNS}
+    matches = job_matches(cv_tools, demands, top=TOP, min_share=0.05)
+    can = [ROLE_NAMES.get(m.role, m.role) for m in matches if m.verdict == "You can apply"]
+    sub = ("You can apply for: " + ", ".join(can) + "." if can
+           else "No role is a strong match yet. The jobs closest to your CV are at the top.")
+    html(ui.section_title("Which jobs can you apply for?",
+                          sub + f" “You can apply” means your CV has at least {APPLY_AT:.0%} of what the job asks for."))
+    html(ui.job_cards([ui.job_card(ROLE_NAMES.get(m.role, m.role.capitalize()), m.n_postings, m.have_pct,
+                                   [display_name(t) for t in m.have], [display_name(t) for t in m.missing],
+                                   m.verdict, chosen=m.role == ss.role) for m in matches]))
+    st.write("")
+
 
 def step_report() -> None:
     title, desc, source, levels = DATASETS[ss.dataset]
@@ -370,6 +387,9 @@ def step_report() -> None:
     html(ui.header("", title_txt, f"Compared with {n:,} {role} postings ({note})."))
     if rep.small_sample:
         st.warning(f"Only {n} postings: the percentages are rough, so look at the ranges.")
+
+    job_overview(cv_tools)
+    html(ui.section_title(f"Your chosen role: {ROLE_NAMES.get(role, role.capitalize())}"))
 
     left, right = st.columns([1, 1.35], gap="large")
     with left:
