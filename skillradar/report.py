@@ -86,6 +86,8 @@ class JobMatch:
     have_pct: float                                   # = coverage of the role's top tools, 0..1
     have: list[str]                                   # top tools on the CV, most requested first
     missing: list[str]                                # top tools not on the CV, most requested first
+    have_rows: pd.DataFrame = field(default_factory=pd.DataFrame, repr=False)     # share + 95% range per tool
+    missing_rows: pd.DataFrame = field(default_factory=pd.DataFrame, repr=False)
 
     @property
     def missing_pct(self) -> float:
@@ -114,7 +116,8 @@ def job_matches(cv_tools: set[str], demands: dict[str, pd.DataFrame], top: int =
             continue
         rep = build_report(cv_tools, demand, top=top, min_share=min_share)
         out.append(JobMatch(role=role, n_postings=rep.n_postings, have_pct=rep.coverage,
-                            have=list(rep.have["tool"]), missing=list(rep.missing["tool"])))
+                            have=list(rep.have["tool"]), missing=list(rep.missing["tool"]),
+                            have_rows=rep.have, missing_rows=rep.missing))
     return sorted(out, key=lambda m: (-m.have_pct, m.role))
 
 

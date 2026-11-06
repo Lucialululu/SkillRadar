@@ -61,5 +61,10 @@ def test_report_lists_every_job_with_have_and_missing(app):
     assert not at.exception
     page = "".join(m.value for m in at.markdown)
     assert "Which jobs can you apply for?" in page
-    assert page.count('class="sr-job ') == 5
+    assert sum("you have" in x.label for x in at.expander) == 5        # one clickable job each
+    assert "Skills you are missing" in page
     assert page.index("Which jobs can you apply for?") < page.index("Already on your CV")
+    # clicking "Show the full report" on another job switches the report to that job
+    before = at.session_state.role
+    at.button(key=next(b.key for b in at.button if str(b.key).startswith("job:"))).click().run()
+    assert not at.exception and at.session_state.role != before

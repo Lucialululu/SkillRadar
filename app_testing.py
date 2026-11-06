@@ -344,7 +344,8 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
 # ---------------------------------------------------------------------------
 
 def job_overview(cv_tools: set[str]) -> None:
-    """Which jobs can you apply for? Every role, best match first, with % you have and % you miss."""
+    """Which jobs can you apply for? Every role, best match first. Click a job to see every skill
+    you have and every skill you are missing for it, or to switch the full report to that job."""
     _, _, source, levels = DATASETS[ss.dataset]
     pt = get_postings(source)
     demands = {r: demand_table(pt, r, levels=levels) for r in ROLE_PATTERNS}
@@ -353,10 +354,22 @@ def job_overview(cv_tools: set[str]) -> None:
     sub = ("You can apply for: " + ", ".join(can) + "." if can
            else "No role is a strong match yet. The jobs closest to your CV are at the top.")
     html(ui.section_title("Which jobs can you apply for?",
-                          sub + f" “You can apply” means your CV has at least {APPLY_AT:.0%} of what the job asks for."))
-    html(ui.job_cards([ui.job_card(ROLE_NAMES.get(m.role, m.role.capitalize()), m.n_postings, m.have_pct,
-                                   [display_name(t) for t in m.have], [display_name(t) for t in m.missing],
-                                   m.verdict, chosen=m.role == ss.role) for m in matches]))
+                          sub + f" “You can apply” means your CV has at least {APPLY_AT:.0%} of what the job asks for. "
+                          "Click a job to see the skills you have and the ones you are missing."))
+    for m in matches:
+        name = ROLE_NAMES.get(m.role, m.role.capitalize())
+        chosen = m.role == ss.role
+        with st.expander(ui.job_label(name, m.have_pct, m.verdict, chosen)):
+            html(ui.job_card(name, m.n_postings, m.have_pct, [display_name(t) for t in m.have],
+                             [display_name(t) for t in m.missing], m.verdict, chosen=chosen))
+            ranked = pd.concat([m.have_rows, m.missing_rows]).sort_values("share", ascending=False)
+            rank = {t: i for i, t in enumerate(ranked["tool"], start=1)}
+            html(ui.job_detail(
+                [(display_name(r.tool), r.share) for r in m.have_rows.itertuples()],
+                [(rank[r.tool], display_name(r.tool), r.share, r.ci_low, r.ci_high) for r in m.missing_rows.itertuples()]))
+            if not chosen and st.button(f"Show the full report for {name}", key=f"job:{m.role}"):
+                ss.role, ss.w_role = m.role, name
+                st.rerun()
     st.write("")
 
 

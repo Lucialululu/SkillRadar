@@ -213,6 +213,8 @@ html, body, .stApp { font-family: 'Instrument Sans', ui-sans-serif, system-ui, -
 .sr-job .line b.teal { color: var(--teal); font-variant-numeric: tabular-nums; }
 .sr-job .line b.amber { color: var(--amber); font-variant-numeric: tabular-nums; }
 .sr-tag.go { background: var(--teal-soft); color: var(--teal); }
+.sr-job-detail .sr-job { margin-bottom: 14px; }
+.sr-job-detail .sr-h2 { font-size: 16px; margin-top: 10px; }
 
 /* ---------- Streamlit widgets in the same style ---------- */
 div.stButton > button, div.stDownloadButton > button, div.stFormSubmitButton > button {
@@ -494,3 +496,23 @@ def job_card(name: str, n_postings: int, have_pct: float, have: list[str], missi
 
 def job_cards(cards: list[str]) -> str:
     return '<div class="sr-jobs">' + "".join(cards) + "</div>"
+
+
+def job_label(name: str, have_pct: float, verdict: str, chosen: bool = False) -> str:
+    """Clickable expander label for one job (Streamlit markdown, not HTML)."""
+    icon = {"You can apply": "🟢", "Almost there": "🟡"}.get(verdict, "⚪")
+    chosen_txt = " · *your chosen role*" if chosen else ""
+    clean = name.replace("[", "(").replace("]", ")")
+    return (f"{icon} **{clean}** — you have :green[**{have_pct:.0%}**], "
+            f"missing :orange[**{1 - have_pct:.0%}**] · {verdict}{chosen_txt}")
+
+
+def job_detail(have: list[tuple[str, float]], missing: list[tuple[int, str, float, float, float]]) -> str:
+    """Inside an opened job: every skill you have (chips) and every skill you miss (bars with 95% range)."""
+    out = section_title(f"Skills you have ({len(have)})")
+    out += (chips([(n, f"{s:.0%}", False) for n, s in have]) if have
+            else '<div class="sr-muted">None of the top skills for this job yet.</div>')
+    out += section_title(f"Skills you are missing ({len(missing)})", "Most requested first. The number is the skill's rank for this job.")
+    out += ("".join(gap_row(r, n, s, lo, hi, tag="") for r, n, s, lo, hi in missing) if missing
+            else '<div class="sr-muted">Nothing: you have all the top skills for this job.</div>')
+    return f'<div class="sr-job-detail">{out}</div>'

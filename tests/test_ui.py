@@ -63,3 +63,10 @@ def test_job_card_shows_have_and_missing_percentages_and_escapes():
     assert "60%" in html_out and "40%" in html_out
     assert "You have" in html_out and "You are missing" in html_out
     assert "&lt;b&gt;" in html_out and "chosen" in html_out
+
+
+def test_job_detail_lists_have_and_missing():
+    out = ui.job_detail([("Python", 0.8)], [(2, "SQL", 0.5, 0.4, 0.6)])
+    assert "Skills you have (1)" in out and "Skills you are missing (1)" in out
+    assert "Python" in out and "SQL" in out and "40% to 60%" in out
+    assert ":green[" in ui.job_label("Data scientist", 0.43, "Almost there")
