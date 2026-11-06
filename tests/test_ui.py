@@ -66,7 +66,8 @@ def test_job_card_shows_have_and_missing_percentages_and_escapes():
 
 
 def test_job_detail_lists_have_and_missing():
-    out = ui.job_detail([("Python", 0.8)], [(2, "SQL", 0.5, 0.4, 0.6)])
+    out = ui.job_detail([(1, "Python", 0.8, 0.7, 0.9)], [(2, "SQL", 0.5, 0.4, 0.6)])
+    assert 'sr-gap have' in out and "70% to 90%" in out
     assert "Skills you have (1)" in out and "Skills you are missing (1)" in out
     assert "Python" in out and "SQL" in out and "40% to 60%" in out
     assert ":green[" in ui.job_label("Data scientist", 0.43, "Almost there")

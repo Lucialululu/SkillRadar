@@ -459,7 +459,8 @@ def ci_howto() -> str:
 def gap_row(rank: int, name: str, share: float, lo: float, hi: float, tag: str = "Missing",
             grey: bool = False, have: bool = False) -> str:
     """One tool: bar = share of postings (100% = full track), bracket = 95% interval."""
-    tag_html = f'<div class="sr-tag {"grey" if grey else ""}">{e(tag)}</div>' if tag else "<div></div>"
+    tag_cls = "go" if have else "grey" if grey else ""
+    tag_html = f'<div class="sr-tag {tag_cls}">{e(tag)}</div>' if tag else "<div></div>"
     return (f'<div class="sr-gap {"have" if have else ""}"><div class="rank">{rank}</div><div class="tool">{e(name)}</div>'
             f'<div class="track"><div class="fill" style="width:{pct(share)}%"></div>'
             f'<div class="ci" style="left:{pct(lo)}%;width:{max(pct(hi) - pct(lo), 1.5):.1f}%"></div></div>'
@@ -507,10 +508,11 @@ def job_label(name: str, have_pct: float, verdict: str, chosen: bool = False) ->
             f"missing :orange[**{1 - have_pct:.0%}**] · {verdict}{chosen_txt}")
 
 
-def job_detail(have: list[tuple[str, float]], missing: list[tuple[int, str, float, float, float]]) -> str:
-    """Inside an opened job: every skill you have (chips) and every skill you miss (bars with 95% range)."""
-    out = section_title(f"Skills you have ({len(have)})")
-    out += (chips([(n, f"{s:.0%}", False) for n, s in have]) if have
+def job_detail(have: list[tuple[int, str, float, float, float]], missing: list[tuple[int, str, float, float, float]]) -> str:
+    """Inside an opened job: every skill you have (teal bars) and every skill you miss (amber bars),
+    both as (rank, name, share, 95% low, 95% high)."""
+    out = section_title(f"Skills you have ({len(have)})", "Most requested first. The number is the skill's rank for this job.")
+    out += ("".join(gap_row(r, n, s, lo, hi, tag="", have=True) for r, n, s, lo, hi in have) if have
             else '<div class="sr-muted">None of the top skills for this job yet.</div>')
     out += section_title(f"Skills you are missing ({len(missing)})", "Most requested first. The number is the skill's rank for this job.")
     out += ("".join(gap_row(r, n, s, lo, hi, tag="") for r, n, s, lo, hi in missing) if missing

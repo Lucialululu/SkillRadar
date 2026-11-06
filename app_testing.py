@@ -365,7 +365,7 @@ def job_overview(cv_tools: set[str]) -> None:
             ranked = pd.concat([m.have_rows, m.missing_rows]).sort_values("share", ascending=False)
             rank = {t: i for i, t in enumerate(ranked["tool"], start=1)}
             html(ui.job_detail(
-                [(display_name(r.tool), r.share) for r in m.have_rows.itertuples()],
+                [(rank[r.tool], display_name(r.tool), r.share, r.ci_low, r.ci_high) for r in m.have_rows.itertuples()],
                 [(rank[r.tool], display_name(r.tool), r.share, r.ci_low, r.ci_high) for r in m.missing_rows.itertuples()]))
             if not chosen and st.button(f"Show the full report for {name}", key=f"job:{m.role}"):
                 ss.role, ss.w_role = m.role, name
@@ -421,12 +421,14 @@ def step_report() -> None:
              f'<div class="sr-card" style="margin-top:18px;padding:14px 16px"><h4 style="font-size:14px">How sure are we?</h4>'
              f'<p style="font-size:13.5px">{ui.e(sure)}</p></div></div>')
     with right:
-        html(ui.section_title("Already on your CV", f"{len(rep.have)} of the top {k} tools for this role"))
+        html(ui.section_title("Already on your CV", f"{len(rep.have)} of the top {k} tools for this role. "
+                                                     "The number is the tool's rank among the top tools."))
         if rep.have.empty:
             st.caption("None of the top tools yet. The list below is a good place to start.")
         else:
-            html(ui.chips([(display_name(r.tool), f"{r.share:.0%}" + (" · added by you" if r.tool in added else ""),
-                            r.tool in added) for r in rep.have.itertuples()]))
+            html("".join(ui.gap_row(rank[r.tool], display_name(r.tool), r.share, r.ci_low, r.ci_high,
+                                    tag="Added by you" if r.tool in added else "", have=True)
+                         for r in rep.have.itertuples()))
         if rep.other_cv_tools:
             st.caption("Also on your CV, less common for this role: "
                        + ", ".join(f"{display_name(t)} ({s:.0%})" for t, s in rep.other_cv_tools))
