@@ -15,8 +15,10 @@ import pandas as pd
 from skillradar.matcher import KEEP, NO_SHORT, VENDORS, is_abbrev
 
 SMALL_SAMPLE = 100   # warn below this many postings
-APPLY_AT = 0.50      # job overview: "You can apply" from this coverage up
-CLOSE_AT = 0.30      # ... "Almost there" from this coverage up
+STRONG_AT = 0.50     # role overview: "Strong match" from this coverage up
+PARTIAL_AT = 0.30    # ... "Partial match" from this coverage up
+# Wording on purpose: coverage of the tools postings name says nothing about being hired, so the
+# overview describes the fit of the CV's tools, never "you can apply".
 
 
 def display_name(tool: str) -> str:
@@ -95,11 +97,11 @@ class JobMatch:
 
     @property
     def verdict(self) -> str:
-        if self.have_pct >= APPLY_AT:
-            return "You can apply"
-        if self.have_pct >= CLOSE_AT:
-            return "Almost there"
-        return "Not yet"
+        if self.have_pct >= STRONG_AT:
+            return "Strong match"
+        if self.have_pct >= PARTIAL_AT:
+            return "Partial match"
+        return "Low match"
 
 
 def job_matches(cv_tools: set[str], demands: dict[str, pd.DataFrame], top: int = 15,

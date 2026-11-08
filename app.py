@@ -28,11 +28,12 @@ from skillradar import ui
 from skillradar.cv_parser import read_cv_bytes
 from skillradar.demand import PROCESSED, ROLE_PATTERNS, demand_table, filter_postings, load_posting_tools
 from skillradar.matcher import KeywordMatcher
-from skillradar.report import APPLY_AT, build_report, display_name, format_report, job_matches
+from skillradar.report import STRONG_AT, build_report, display_name, format_report, job_matches
 from skillradar.robustness import rank_intervals, replication, seniority
 
 ONET = Path("data/onet/software_skills.csv")
 TOP = 15
+SHOW_MISSING = 5          # missing tools shown before 'Show more'
 
 # key -> (title, description, source, levels)
 DATASETS = {
@@ -274,31 +275,38 @@ def step_check() -> None:
 # Step 4: Report
 # ---------------------------------------------------------------------------
 
-def job_overview(cv_tools: set[str]) -> None:
-    """Which jobs can you apply for? Every role, best match first. Click a job to see every skill
-    you have and every skill you are missing for it, or to switch the full report to that job."""
+def match_all_roles(cv_tools: set[str]):
     _, _, source, levels = DATASETS[ss.dataset]
     pt = get_postings(source)
-    demands = {r: demand_table(pt, r, levels=levels) for r in ROLE_PATTERNS}
-    matches = job_matches(cv_tools, demands, top=TOP, min_share=0.05)
-    can = [ROLE_NAMES.get(m.role, m.role) for m in matches if m.verdict == "You can apply"]
-    sub = ("You can apply for: " + ", ".join(can) + "." if can
-           else "No role is a strong match yet. The jobs closest to your CV are at the top.")
-    html(ui.section_title("Which jobs can you apply for?",
-                          sub + f" “You can apply” means your CV has at least {APPLY_AT:.0%} of what the job asks for. "
-                          "Click a job to see the skills you have and the ones you are missing."))
+    return job_matches(cv_tools, {r: demand_table(pt, r, levels=levels) for r in ROLE_PATTERNS},
+                       top=TOP, min_share=0.05)
+
+
+def overview_title(matches) -> str:
+    """The page's main answer: which roles the CV's tools fit."""
+    strong = [ROLE_NAMES.get(m.role, m.role) for m in matches if m.verdict == "Strong match"]
+    if strong:
+        names = strong[0] if len(strong) == 1 else ", ".join(strong[:-1]) + " and " + strong[-1]
+        return f"Your CV is a strong match for {names}"
+    return f"Your closest match is {ROLE_NAMES.get(matches[0].role, matches[0].role)}" if matches else "Your report"
+
+
+def role_overview(matches) -> None:
+    """All roles, best match first. 'View' switches the report below to that role (no details repeated here)."""
+    html(ui.section_title("How your CV matches each role",
+                          f"Each bar is the share of what postings for that role ask for that is already on your CV, "
+                          f"weighted by how often they ask for it. The mark is {STRONG_AT:.0%}: from there we call it a "
+                          f"strong match. It describes your tools, not your chances of being hired."))
     for m in matches:
         name = ROLE_NAMES.get(m.role, m.role.capitalize())
         chosen = m.role == ss.role
-        with st.expander(ui.job_label(name, m.have_pct, m.verdict, chosen)):
-            html(ui.job_card(name, m.n_postings, m.have_pct, [display_name(t) for t in m.have],
-                             [display_name(t) for t in m.missing], m.verdict, chosen=chosen))
-            ranked = pd.concat([m.have_rows, m.missing_rows]).sort_values("share", ascending=False)
-            rank = {t: i for i, t in enumerate(ranked["tool"], start=1)}
-            html(ui.job_detail(
-                [(rank[r.tool], display_name(r.tool), r.share, r.ci_low, r.ci_high) for r in m.have_rows.itertuples()],
-                [(rank[r.tool], display_name(r.tool), r.share, r.ci_low, r.ci_high) for r in m.missing_rows.itertuples()]))
-            if not chosen and st.button(f"Show the full report for {name}", key=f"job:{m.role}"):
+        row, btn = st.columns([1, 0.13], vertical_alignment="center", gap="small")
+        with row:
+            html(ui.role_match_row(name, m.have_pct, m.verdict, [display_name(t) for t in m.missing], chosen))
+        with btn:
+            if chosen:
+                html('<div class="sr-shown">Shown below</div>')
+            elif st.button("View", key=f"job:{m.role}", use_container_width=True):
                 ss.role, ss.w_role = m.role, name
                 st.rerun()
     st.write("")
@@ -326,14 +334,18 @@ def step_report() -> None:
         .sort_values("share", ascending=False).reset_index(drop=True)
     rank = {t: i for i, t in enumerate(top_tools["tool"], start=1)}
     k = len(top_tools)
-    title_txt = (f"You already have {len(rep.have)} of the top {k} tools" if len(rep.have)
-                 else "Here's where to start")
-    html(ui.header("", title_txt, f"Compared with {n:,} {role} postings ({note})."))
+    matches = match_all_roles(cv_tools)
+    html(ui.header("", overview_title(matches),
+                   "First, see how your CV matches each role. Then, below, the full report for one role: "
+                   "the tools you already have, and what to learn next, most requested first."))
+    role_overview(matches)
+
+    role_name = ROLE_NAMES.get(role, role.capitalize())
+    html(ui.subheading(f"{role_name}: you have {len(rep.have)} of the top {k} tools" if len(rep.have)
+                       else f"{role_name}: here's where to start",
+                       f"Compared with {n:,} {role} postings ({note})."))
     if rep.small_sample:
         st.warning(f"Only {n} postings: the percentages are rough, so look at the ranges.")
-
-    job_overview(cv_tools)
-    html(ui.section_title(f"Your chosen role: {ROLE_NAMES.get(role, role.capitalize())}"))
 
     left, right = st.columns([1, 1.35], gap="large")
     with left:
@@ -352,6 +364,7 @@ def step_report() -> None:
              f'<div class="sr-card" style="margin-top:18px;padding:14px 16px"><h4 style="font-size:14px">How sure are we?</h4>'
              f'<p style="font-size:13.5px">{ui.e(sure)}</p></div></div>')
     with right:
+        html(ui.ci_howto())
         html(ui.section_title("Already on your CV", f"{len(rep.have)} of the top {k} tools for this role. "
                                                      "The number is the tool's rank among the top tools."))
         if rep.have.empty:
@@ -368,14 +381,16 @@ def step_report() -> None:
         if rep.missing.empty:
             st.success("You have all of the top tools for this role.")
         else:
-            html(ui.ci_howto())
             sen = get_seniority(role)
             rows = []
             for r in rep.missing.itertuples():
                 tag, grey = seniority_tag(r.tool, sen)
                 rows.append(ui.gap_row(rank[r.tool], display_name(r.tool), r.share, r.ci_low, r.ci_high,
                                        tag=tag if grey else "", grey=grey))
-            html("".join(rows))
+            html("".join(rows[:SHOW_MISSING]))           # the most requested first; the rest on request
+            if len(rows) > SHOW_MISSING:
+                with st.expander(f"Show the other {len(rows) - SHOW_MISSING} missing tools"):
+                    html("".join(rows[SHOW_MISSING:]))
 
     st.write("")
     f1, f2 = st.columns([3, 2])

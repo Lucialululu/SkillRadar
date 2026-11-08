@@ -82,4 +82,4 @@ def test_job_matches_ranks_roles_and_splits_have_and_missing():
     da = m[0]
     assert da.have == ["Excel", "SQL"] and da.missing == ["Tableau"]
     assert abs(da.have_pct + da.missing_pct - 1) < 1e-9
-    assert da.verdict == "You can apply" and m[1].verdict == "Not yet"
+    assert da.verdict == "Strong match" and m[1].verdict == "Low match"

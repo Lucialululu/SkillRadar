@@ -200,21 +200,27 @@ html, body, .stApp { font-family: 'Instrument Sans', ui-sans-serif, system-ui, -
 .sr-chip.added { border-color: var(--teal-line); }
 .sr-chip.added span { color: var(--teal); }
 
-/* job overview: which jobs can you apply for? */
-.sr-jobs { display: grid; gap: 10px; margin: 4px 0 10px; }
-.sr-job { padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line2); background: rgba(5,9,13,.6); }
-.sr-job.chosen { border-color: var(--teal-line); background: var(--raised); }
-.sr-job .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-.sr-job .name { color: var(--ink); font-size: 18px; font-weight: 600; }
-.sr-job .name small { color: var(--ink3); font-size: 13px; font-weight: 400; margin-left: 8px; }
-.sr-job .bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--amber-soft); margin: 0 0 10px; }
-.sr-job .bar i { display: block; height: 100%; background: var(--teal); }
-.sr-job .line { color: var(--ink2); font-size: 14.5px; line-height: 1.5; margin: 2px 0; }
-.sr-job .line b.teal { color: var(--teal); font-variant-numeric: tabular-nums; }
-.sr-job .line b.amber { color: var(--amber); font-variant-numeric: tabular-nums; }
+/* role overview: how the CV matches every role */
+.sr-match { display: grid; grid-template-columns: minmax(150px, 1.1fr) 2fr 52px 112px; align-items: center; gap: 18px; padding: 12px 16px; border-radius: 12px; background: rgba(5,9,13,.6); border: 1px solid transparent; }
+.sr-match.chosen { background: var(--raised); border-color: var(--teal-line); }
+.sr-match .role { color: var(--ink); font-weight: 600; font-size: 16px; line-height: 1.25; }
+.sr-match .role small { display: block; color: var(--ink3); font-size: 12.5px; font-weight: 400; margin-top: 3px; }
+.sr-match .role small b { color: var(--teal); font-weight: 500; }
+.sr-match .track { position: relative; height: 10px; border-radius: 999px; background: var(--amber-soft); }
+.sr-match .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--teal); }
+.sr-match .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink2); opacity: .7; }
+.sr-match .pct { color: var(--ink); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.sr-match .sr-tag { justify-self: start; }
 .sr-tag.go { background: var(--teal-soft); color: var(--teal); }
-.sr-job-detail .sr-job { margin-bottom: 14px; }
-.sr-job-detail .sr-h2 { font-size: 16px; margin-top: 10px; }
+.sr-shown { color: var(--teal); font-size: 13.5px; font-weight: 500; text-align: center; }
+.sr-h2b { color: var(--ink); font-size: 30px; font-weight: 600; font-stretch: 90%; letter-spacing: -0.02em; line-height: 1.1; margin: 8px 0 6px; padding: 0; }
+@media (max-width: 760px) {
+  .sr-match { grid-template-columns: 1fr auto; row-gap: 10px; }
+  .sr-match .track { grid-column: 1 / 3; grid-row: 2; }
+  .sr-match .pct { grid-column: 2; grid-row: 1; }
+  .sr-match .sr-tag { grid-column: 1; grid-row: 3; }
+  .sr-h2b { font-size: 24px; }
+}
 
 /* ---------- Streamlit widgets in the same style ---------- */
 div.stButton > button, div.stDownloadButton > button, div.stFormSubmitButton > button {
@@ -474,47 +480,21 @@ def chips(items: list[tuple[str, str, bool]]) -> str:
         f'<div class="sr-chip {"added" if added else ""}">{e(n)}<span>{e(d)}</span></div>' for n, d, added in items) + "</div>"
 
 
-def _tool_list(names: list[str], limit: int = 6) -> str:
-    if not names:
-        return "none"
-    shown = ", ".join(e(n) for n in names[:limit])
-    return shown + (f" and {len(names) - limit} more" if len(names) > limit else "")
+def role_match_row(name: str, have_pct: float, verdict: str, top_missing: list[str],
+                   chosen: bool = False, mark: float = 0.5) -> str:
+    """One role in the overview: name, coverage bar with the strong-match mark, %, verdict as text.
+    The two most requested missing tools are shown under the name, so each row says what it would take."""
+    tag = "go" if verdict == "Strong match" else "grey" if verdict == "Low match" else ""
+    sub = ("<b>Your choice</b> · " if chosen else "") + (
+        "Missing most: " + ", ".join(e(t) for t in top_missing[:2]) if top_missing else "No top tool missing")
+    return (f'<div class="sr-match {"chosen" if chosen else ""}">'
+            f'<div class="role">{e(name)}<small>{sub}</small></div>'
+            f'<div class="track" aria-hidden="true"><div class="fill" style="width:{pct(have_pct)}%"></div>'
+            f'<div class="mark" style="left:{pct(mark)}%"></div></div>'
+            f'<div class="pct">{have_pct:.0%}</div>'
+            f'<div class="sr-tag {tag}">{e(verdict)}</div></div>')
 
 
-def job_card(name: str, n_postings: int, have_pct: float, have: list[str], missing: list[str],
-             verdict: str, chosen: bool = False) -> str:
-    """One job in the overview: job, % of its skills you have (and which), % you are missing (and which)."""
-    tag = "go" if verdict == "You can apply" else "grey" if verdict == "Not yet" else ""
-    chosen_txt = " · your chosen role" if chosen else ""
-    return (f'<div class="sr-job {"chosen" if chosen else ""}"><div class="head">'
-            f'<div class="name">{e(name)}<small>{n_postings:,} postings{chosen_txt}</small></div>'
-            f'<div class="sr-tag {tag}">{e(verdict)}</div></div>'
-            f'<div class="bar" aria-hidden="true"><i style="width:{pct(have_pct)}%"></i></div>'
-            f'<div class="line">You have <b class="teal">{have_pct:.0%}</b> of the skills for this job: {_tool_list(have)}</div>'
-            f'<div class="line">You are missing <b class="amber">{1 - have_pct:.0%}</b> of the skills for this job: '
-            f'{_tool_list(missing)}</div></div>')
-
-
-def job_cards(cards: list[str]) -> str:
-    return '<div class="sr-jobs">' + "".join(cards) + "</div>"
-
-
-def job_label(name: str, have_pct: float, verdict: str, chosen: bool = False) -> str:
-    """Clickable expander label for one job (Streamlit markdown, not HTML)."""
-    icon = {"You can apply": "🟢", "Almost there": "🟡"}.get(verdict, "⚪")
-    chosen_txt = " · *your chosen role*" if chosen else ""
-    clean = name.replace("[", "(").replace("]", ")")
-    return (f"{icon} **{clean}** — you have :green[**{have_pct:.0%}**], "
-            f"missing :orange[**{1 - have_pct:.0%}**] · {verdict}{chosen_txt}")
-
-
-def job_detail(have: list[tuple[int, str, float, float, float]], missing: list[tuple[int, str, float, float, float]]) -> str:
-    """Inside an opened job: every skill you have (teal bars) and every skill you miss (amber bars),
-    both as (rank, name, share, 95% low, 95% high)."""
-    out = section_title(f"Skills you have ({len(have)})", "Most requested first. The number is the skill's rank for this job.")
-    out += ("".join(gap_row(r, n, s, lo, hi, tag="", have=True) for r, n, s, lo, hi in have) if have
-            else '<div class="sr-muted">None of the top skills for this job yet.</div>')
-    out += section_title(f"Skills you are missing ({len(missing)})", "Most requested first. The number is the skill's rank for this job.")
-    out += ("".join(gap_row(r, n, s, lo, hi, tag="") for r, n, s, lo, hi in missing) if missing
-            else '<div class="sr-muted">Nothing: you have all the top skills for this job.</div>')
-    return f'<div class="sr-job-detail">{out}</div>'
+def subheading(title: str, sub: str = "") -> str:
+    """Second-level page heading (the chosen role's report)."""
+    return f'<h2 class="sr-h2b">{e(title)}</h2>' + (f'<div class="sr-sub" style="margin-bottom:14px">{e(sub)}</div>' if sub else "")

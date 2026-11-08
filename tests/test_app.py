@@ -52,7 +52,9 @@ def test_report_renders_have_first_with_range_key(app):
 
 
 @pytest.mark.parametrize("app", ["app.py", "app_testing.py"])
-def test_report_lists_every_job_with_have_and_missing(app):
+def test_report_starts_with_role_overview_without_repetition(app):
+    """Peer feedback: 'which jobs can I apply for?' The page answers that first (one row per role,
+    text verdicts, no emoji), then the chosen role's report; 'View' switches the report to another role."""
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(ROOT / app), default_timeout=120)
     at.session_state.step = 4
@@ -60,11 +62,12 @@ def test_report_lists_every_job_with_have_and_missing(app):
     at.run()
     assert not at.exception
     page = "".join(m.value for m in at.markdown)
-    assert "Which jobs can you apply for?" in page
-    assert sum("you have" in x.label for x in at.expander) == 5        # one clickable job each
-    assert "Skills you are missing" in page
-    assert page.index("Which jobs can you apply for?") < page.index("Already on your CV")
-    # clicking "Show the full report" on another job switches the report to that job
+    assert page.count('class="sr-match') == 5 and "Shown below" in page
+    assert sum(str(b.key).startswith("job:") for b in at.button) == 4      # a View button for every other role
+    assert "How your CV matches each role" in page and "You can apply" not in page
+    assert not any(ch in page for ch in "🟢🟡⚪")
+    assert page.index("How your CV matches each role") < page.index("Already on your CV")
+    assert "Skills you are missing" not in page                        # the old per-job details are gone
     before = at.session_state.role
     at.button(key=next(b.key for b in at.button if str(b.key).startswith("job:"))).click().run()
     assert not at.exception and at.session_state.role != before

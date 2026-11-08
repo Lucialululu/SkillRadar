@@ -58,16 +58,12 @@ def test_stats_and_chips():
     assert 'sr-chip added' in c and "&lt;x&gt;" in c
 
 
-def test_job_card_shows_have_and_missing_percentages_and_escapes():
-    html_out = ui.job_card("Data <b>analyst", 120, 0.6, ["SQL", "Excel"], ["Tableau"], "You can apply", chosen=True)
-    assert "60%" in html_out and "40%" in html_out
-    assert "You have" in html_out and "You are missing" in html_out
-    assert "&lt;b&gt;" in html_out and "chosen" in html_out
-
-
-def test_job_detail_lists_have_and_missing():
-    out = ui.job_detail([(1, "Python", 0.8, 0.7, 0.9)], [(2, "SQL", 0.5, 0.4, 0.6)])
-    assert 'sr-gap have' in out and "70% to 90%" in out
-    assert "Skills you have (1)" in out and "Skills you are missing (1)" in out
-    assert "Python" in out and "SQL" in out and "40% to 60%" in out
-    assert ":green[" in ui.job_label("Data scientist", 0.43, "Almost there")
+def test_role_match_row_is_text_only_and_escapes():
+    row = ui.role_match_row("Data <b>analyst", 0.64, "Strong match", ["AWS", "Kubernetes", "Spark"], chosen=True)
+    assert "64%" in row and "Strong match" in row and "sr-tag go" in row and "chosen" in row
+    assert "Missing most: AWS, Kubernetes" in row and "Spark" not in row      # two tools only
+    assert "&lt;b&gt;" in row
+    assert 'class="mark" style="left:50.0%"' in row                        # the strong-match line
+    assert not any(ord(ch) > 0x2FFF for ch in row)                         # no emoji
+    low = ui.role_match_row("UX designer", 0.0, "Low match", [])
+    assert "sr-tag grey" in low and "No top tool missing" in low
