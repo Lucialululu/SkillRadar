@@ -6,11 +6,14 @@ We want to evaluate whether SkillRadar is easy to use, whether students find its
 
 ## 2. Participants
 
-- Pilot: 2 classmates, approximately 15 minutes each.
-- Peer trial: 6–8 students after the pilot.
+- Pilot: 2 classmates, approximately 15 minutes each (P01, P02; see `pilot_notes.md`).
+- Peer trial: 6–8 job-seeking students who are not in the group, about 20 minutes each (P03 onwards).
+- Everyone in the peer trial tests the same app version; the app is not changed between sessions.
 - Participation is voluntary.
 
 ## 3. Testing Procedure
+
+Step-by-step script for the facilitator: [`peer_trial_guide.md`](peer_trial_guide.md).
 
 We use the think-aloud method. Participants are asked to explain what they are thinking while using SkillRadar. We observe without helping unless necessary.
 
@@ -18,7 +21,7 @@ Each participant completes these tasks:
 
 1. Upload a CV and select a target job role.
 2. Review the extracted tools and correct any mistakes.
-3. Generate the skill-gap report.
+3. Generate the skill-gap report and explain what it says. For each missing tool shown: "Is it really missing from your CV?" (yes/no; perceived accuracy).
 4. Identify one or two tools they would prioritize learning and explain why.
 
 ## 4. Consent
@@ -52,6 +55,7 @@ For each participant, we record:
 - Whether they completed each task without help.
 - Any confusion or usability problems.
 - Number of tools added and removed during confirmation (from the facilitator panel).
+- How many of the missing tools shown the participant agrees are really missing.
 - Questionnaire ratings (1–5).
 - Suggestions for improvement.
 
@@ -65,6 +69,7 @@ After the peer trial, we summarize:
 
 - Task success rates.
 - Tool correction rates.
+- Perceived accuracy (share of missing tools the participant agrees are missing).
 - Questionnaire responses about accuracy, usefulness and trust.
 - Recurring usability problems and suggested improvements.
 
