@@ -4,7 +4,7 @@
 > It is *material*, not text to paste. The course allows AI as an editor, not a ghost writer (W8 lecture), so we write
 > the paper's sentences ourselves from this. Keep it updated as results come in; every number here should point to a file.
 
-*Last updated: Wed 4 Nov 2026 (week 9). Status of the work itself: [`TODO.md`](TODO.md).*
+*Last updated: Sun 8 Nov 2026 (week 9). Technical work finished and frozen; what remains is the peer trial and the writing. Status of the work itself: [`TODO.md`](TODO.md).*
 
 ---
 
@@ -20,7 +20,7 @@
 | Appendix: **contribution statement** (equal split, paper *and* code) and **AI-use statement** with full-responsibility sentence | Report template, W8 | §9, §10 |
 | Abstract: written last, one paragraph, ~150 words, no citations, *what we did and what we found* | W8 writing lecture | §4 skeleton |
 | Method like a recipe: participants, apparatus, procedure, design | W8 writing lecture | Peer trial write-up |
-| Negative results are fine if tested and explained | Playbook ("Testing") | Trends dropped; embedding linking failed; verify-only adds nothing |
+| Negative results are fine if tested and explained | Playbook ("Testing") | Trends dropped; embedding linking failed; verify-only adds nothing; inside the vocabulary the LLM adds nothing |
 
 ## 1. The story in one paragraph
 
@@ -46,6 +46,7 @@ without losing precision. On postings, its value is **coverage, not correction**
 | Week 9 | — | Keyword precision already 0.97; only 4 false positives in 30 postings; **23% of labelled tools outside our vocabulary** | LLM role shifted from correction to **coverage**; method study judged on recall over *all* tools |
 | Week 9 | Embedding linking to O\*NET | Every embedding link on dev was a related but wrong tool | **Linking off** (a reported negative result) |
 | Week 9 | — | Pilot feedback: ranges unclear, show matches first, looks generic | Redesign: have-first report, plain-language range key, radar chart |
+| Week 9 | Matcher v2: add the LLM's out-of-vocabulary finds to the keyword vocabulary | The list of tools would come from our test misses (leakage), and it would change the app and Goal 2 mid-trial | **Cut → future work**; app and numbers frozen |
 
 The arc to tell: *ambitious idea → data showed what it can and cannot support → narrowed to claims we can test → each
 method choice justified by a measured problem.* That is the "select suitable methods" and "test whether goals are
@@ -74,7 +75,7 @@ Options to choose from or improve:
 
 ### Abstract (write last; skeleton only)
 - What: a web prototype comparing CV tools with demand in ~10,800 LinkedIn postings for five roles
-- How tested: blind double-labelled postings (κ 0.90); keyword vs LLM-only vs hybrid on held-out postings; replication of rankings across two datasets; peer trial
+- How tested: blind double-labelled postings (κ 0.90); keyword vs LLM-only vs hybrid on held-out postings; a check on CVs; replication of rankings across two datasets; peer trial
 - Found: keyword P 0.97 but finds 73% of all tools; hybrid 95% (+22 points) at the same precision; rankings replicate (ρ 0.80–0.87 for three roles); peer-trial result
 - One sentence on what it means
 
@@ -146,7 +147,16 @@ Key sentences to make (in our words):
 
 **Scoring note:** lenient scoring credits a found tool outside the vocabulary when its name matches a label (squashed equality or containment, ≥ 4 characters), for all methods alike; keyword numbers are identical under both. Under strict scoring every out-of-vocabulary tool counts as wrong, so LLM precision drops to 0.77–0.78 (39 of LLMOnly's 42 strict false positives are correct new tools). Strict tables in the appendix.
 
-**Goal 1, CVs:** *pending* (6–10 CVs, labelled blind, same methods).
+**Goal 1, CVs (a check, not a separate result):** 5 CVs from volunteers with consent (1 dev, 4 test), labelled by both authors (positive agreement F1 0.94; the one real disagreement was five niche tools on one CV), gold = union. Keyword matcher only: the LLM is not run on CVs (privacy; the app does not use it on CVs). From `evaluation/results/goal1_cv_keyword.md`, 4 test CVs, 61 labelled tools:
+
+| Matcher | Precision | Recall (vocab) | Recall (all) |
+|---|---|---|---|
+| exact | 0.95 | 0.89 | 0.69 |
+| full (frozen) | 0.96 (0.88–1.00) | 1.00 | 0.77 (0.69–0.88) |
+
+Key sentence: on CVs the pattern from postings repeats. Precision stays high, and recall is limited by the same share of tools outside the vocabulary (23%, e.g. Databricks, Jupyter, Futhark). n = 4, so this supports the posting result rather than standing alone.
+
+**Parsing robustness (one or two sentences):** the app was tried on 15+ CVs from 5 people, as PDF (standard templates and two-column designs made in Figma) and .docx. No parsing failures; the only tools missed were outside the vocabulary (e.g. Julia, Matplotlib). In two-column PDFs the text of the columns is interleaved, which leaves tool names intact.
 
 **Goal 2** (`analysis/results/goal2_output.txt`):
 
@@ -167,22 +177,24 @@ Key sentences to make (in our words):
 ### Discussion
 - Why keyword precision is high and recall limited: tools are mostly named explicitly in postings; the taxonomy, not the method, is the bottleneck. Matches Nguyen et al.'s point that LLMs help where fixed approaches have no answer.
 - Hybrid vs LLM-only: similar results; the hybrid keeps the explainable keyword evidence for the tools it shares with the keyword matcher.
-- Cost: ~20 s and ~3,400 tokens per posting → infeasible for 1.3 M postings; the app keeps keywords for market data. A cheaper route (future work / v2): use the LLM's findings to **extend the vocabulary**, then keep keyword matching.
+- What the LLM result means, stated precisely: inside the O\*NET vocabulary the LLM adds nothing measurable (ΔF1 +0.01, n.s.), and as a checker of keyword matches it adds nothing (1 rejection in 30 postings). Its whole gain is tools the taxonomy lacks. So the answer to "does the LLM help?" is: not with matching, only with coverage.
+- Cost: ~20 s and ~3,400 tokens per posting → infeasible for 1.3 M postings; the app keeps keywords for market data. The cheaper route is to use the LLM's findings to **extend the vocabulary** and keep keyword matching. We did not do this within the project: the tools to add would be chosen from our own test misses, so an honest evaluation needs newly labelled postings, and changing the vocabulary would have changed the app during the peer trial. → future work.
 - HCAI: the confirm step is the safety net for extraction errors; Bansal et al. warn that evidence phrases may increase acceptance of wrong tools; the correction rate measures this.
 - Threats to validity: 30 test postings from one role; gold = union of two labellers; lenient name matching; one LLM at temperature 0, and the model will change (gemini-2.5-flash was retired during the project); US-heavy 2024 data vs Danish users; single snapshots.
-- Future work: vocabulary expansion from LLM findings; ESCO for European users; a published trained extractor (JobBERT) as a further baseline; more roles in the evaluation; a time series to study trends.
+- Future work: vocabulary expansion from LLM findings, evaluated on new labelled postings; ESCO for European users; a published trained extractor (JobBERT) as a further baseline; more roles in the evaluation; a time series to study trends.
 
 ## 5. Figures and tables to make
 
 | # | What | Built from | Status |
 |---|---|---|---|
 | Fig 1 | Pipeline diagram (offline build, app, tests) | FigJam / draw.io from §4 | started (FigJam needed a team pick) |
-| Fig 2 | App report screenshot, annotated with the HCAI choices | hosted app, example CV | possible now |
+| Fig 2 | App report screenshot, annotated with the HCAI choices | hosted app, example CV | possible now (app is frozen) |
 | Fig 3 | Ablation bar chart: recall (vocab) and precision per step, CI whiskers | `goal1_test_ablation.md` | to do |
 | Fig 4 | Method comparison: recall (all) per method with CIs (or Table 1 alone if space is short) | `goal1_test_lenient.md` | to do |
 | Table 1 | Method comparison | above | ready |
 | Table 2 | Goal 2 replication | above | ready |
-| Fig 5 | Peer-trial Likert ratings (6 statements) | Google Sheet | after trial |
+| Fig 5 | Peer-trial Likert ratings (6 statements) | Google Sheet | after trial (3 of 6–8 done) |
+| Table 3 | Goal 1 on CVs (small) | `goal1_cv_keyword.md` | ready |
 | Appendix | Strict tables, rank intervals, entry vs senior, prompts, label guidelines, questionnaire, embedding-link examples | repo | later |
 
 ## 6. Findings log (each with its source)
@@ -200,6 +212,11 @@ Key sentences to make (in our words):
 11. Duplicates, UX bug, Google/Facebook drops: README "Results so far"
 12. Jan vs Apr differences are scraper artefacts: `preprocessing/data_inspection_primary.ipynb` §5
 13. Pilot feedback (2 rows) → redesign: Google Sheet, commit 22f0a24
+14. Lenient scoring hand-checked: 79 credited pairs, 78 identical names, 1 containment (Amazon Web Services ↔ AWS, correct): `goal1_lenient_pairs.md`
+15. CVs: keyword P 0.96, R(vocab) 1.00, R(all) 0.77 on 4 test CVs; 23% of CV tools outside the vocabulary: `goal1_cv_keyword.md`
+16. CV labeller agreement: positive F1 0.94 on 5 CVs: `evaluate.py --agreement evaluation/labels_cv_A.csv evaluation/labels_cv_B.csv`
+17. Parsing: 15+ CVs from 5 people (PDF incl. two-column Figma designs, .docx), no parsing failures; misses were out-of-vocabulary tools (Julia, Matplotlib): manual test, 8 Nov
+18. Matcher v2 cut (leakage + mid-trial change): TODO.md, decisions 8 Nov
 
 ## 7. References (≥ 10 academic) and where each is used
 
@@ -222,10 +239,11 @@ Use DTU FindIt for BibTeX; format per the W8 checklist (numbered, alphabetical, 
 ## 8. Before we write: things to check
 
 - [ ] Read the sections we cite in each paper (W8: "cited but not verified"); especially Clavié & Soulié's prompt-format claim and Nguyen et al.'s "complex mentions" finding
-- [ ] Hand-check the out-of-vocabulary names credited by lenient scoring (any doubtful pair → say so)
+- [x] Hand-check the out-of-vocabulary names credited by lenient scoring (all 79 correct; `goal1_lenient_pairs.md`)
 - [ ] Hand-check the ~13/11/23 out-of-vocabulary split
 - [ ] Kaggle licences (two TODOs in the README)
-- [ ] Peer-trial numbers and CV results, then fill §4
+- [x] CV results (above)
+- [ ] Peer-trial numbers, then fill Goal 3 in §4
 
 ## 9. Contribution statement (appendix): collect as we go
 
@@ -245,9 +263,11 @@ Keep a short log of representative prompts while working; a full list is not req
 - *Why not train a model?* 40 labelled postings are too few; pretrained models adapted with dev-set choices are the suitable method here (Nguyen et al.; Clavié & Soulié); we compared against a strong frozen baseline instead.
 - *Isn't lenient scoring flattering?* It applies to every method; keyword numbers are unchanged; strict tables are in the appendix; we hand-checked the credited matches.
 - *Why is the gold the union of both labellers?* A tool counts if either of us found it in the text; agreement was high (κ 0.90); the union favours recall, which we report.
-- *Why does the app not use the LLM?* Cost/latency for market data; privacy for CVs; the keyword matcher is precise and explainable; the confirm step catches its misses. v2 adds the LLM's discovered tools to the vocabulary.
+- *Why does the app not use the LLM?* Cost/latency for market data; privacy for CVs; the keyword matcher is precise and explainable; the confirm step catches its misses.
+- *So did the LLM help at all?* Not with matching: inside the vocabulary and as a checker it adds nothing measurable. It helps with coverage: +0.22 recall over all tools, at the same precision, because it finds tools O\*NET lacks.
+- *Why not add the LLM's tools to your vocabulary?* That is the obvious next step, but the list would come from our test misses, so testing it on the same postings would be leakage; it needs new labelled postings. And it would have changed the app during the peer trial. → future work.
 - *How do you know the demand ranking is real?* It replicates across two independent datasets (ρ 0.80–0.87 for three roles), and the app shows 95% ranges.
-- *What would you do with more time?* Vocabulary expansion, ESCO, more roles in Goal 1, a trained extractor baseline, a time series.
+- *What would you do with more time?* Vocabulary expansion (evaluated on new postings), ESCO, more roles in Goal 1, a trained extractor baseline, a time series.
 
 ## 12. Final presentation (25 Nov): rough outline
 
