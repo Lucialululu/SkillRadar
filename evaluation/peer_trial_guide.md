@@ -6,7 +6,7 @@ Goal 3 test. One session = one participant, about 20 minutes. Protocol and conse
 
 ## Before the trial (once)
 
-- [ ] **Freeze the app version.** Everyone tests the same version. Note the commit: `git rev-parse --short HEAD` → write it here: `______`. No app changes until the last session is done.
+- [ ] **Freeze the app version.** Everyone tests the same version. Note the commit: `git rev-parse --short HEAD` → write it here: `21416fc`. No app changes until the last session is done.
 - [ ] **Dry run** the hosted `app_testing.py` with the sample CV, tick "Practice submission", fill in the facilitator part too, and check the row arrives in the Sheet with the new columns (`missing_shown` … `facilitator_notes`).
 - [ ] Recruit **6–8 students who are not in the group** and are job-seeking (internship / first job). Book 20-minute slots (e.g. the 11 Nov peer-testing session).
 - [ ] Give each participant a code in order: **P03, P04, …** (P01–P02 were the pilot). Never write names in the repo or the Sheet.
