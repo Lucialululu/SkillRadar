@@ -54,10 +54,12 @@ For each participant, we record:
 
 - Whether they completed each task without help.
 - Any confusion or usability problems.
-- Number of tools added and removed during confirmation (from the facilitator panel).
+- Number of tools found, added and removed during confirmation (saved automatically by the app).
 - How many of the missing tools shown the participant agrees are really missing.
 - Questionnaire ratings (1–5).
 - Suggestions for improvement.
+
+Everything is saved by the testing app in step 5: the participant fills in the questionnaire and marks missing tools that are not really missing; the facilitator fills in the task codes and notes in the "For the facilitator" part before saving.
 
 We use anonymous participant IDs (P01, P02, etc.) and do not include personal CV information in the notes.
 

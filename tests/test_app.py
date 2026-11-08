@@ -71,3 +71,16 @@ def test_report_starts_with_role_overview_without_repetition(app):
     before = at.session_state.role
     at.button(key=next(b.key for b in at.button if str(b.key).startswith("job:"))).click().run()
     assert not at.exception and at.session_state.role != before
+
+
+def test_testing_app_asks_about_missing_tools_and_has_facilitator_part():
+    """Peer trial: perceived accuracy, task success and facilitator notes are part of the saved form."""
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(ROOT / "app_testing.py"), default_timeout=120)
+    at.session_state.step = 4
+    at.session_state.cv_text, at.session_state.cv_name, at.session_state.cv_key = "Python, SQL and Tableau", "cv.txt", "t"
+    at.run()
+    assert not at.exception
+    keys = {str(w.key) for w in [*at.selectbox, *at.multiselect, *at.text_area]}
+    assert {"q_not_missing", "q_facilitator_notes", "q_task1_upload_role", "q_task4_choose_tool"} <= keys
+    assert len(at.multiselect(key="q_not_missing").options) > 0       # the missing tools from the report

@@ -14,10 +14,15 @@ Never rely on the CSV when the app is hosted: Streamlit Cloud wipes its disk on 
 sleep and push. Both destinations use the same columns:
 
 `participant_id, test_run, recorded_at_utc, cv_type (sample/own), role, dataset, detected, added, removed,
-accuracy, relevance, usefulness, explanation, trust, ease_of_use, main_confusion, suggested_improvement`
+accuracy, relevance, usefulness, explanation, trust, ease_of_use, main_confusion, suggested_improvement,
+missing_shown, missing_agreed, task1_upload_role, task2_correct_tools, task3_understand_report, task4_choose_tool,
+facilitator_notes`
 
-The task-success columns (task 1–4: without help / with help / not completed) are observations,
-so the facilitator adds them after each session.
+The last seven columns were added for the peer trial. `missing_shown` / `missing_agreed`: how many missing tools
+the report showed, and how many the participant agreed are really missing. The task columns
+(`no_help` / `with_help` / `failed`) and `facilitator_notes` are the facilitator's observations, filled in by the
+facilitator in the "For the facilitator" part of step 5 before saving. A sheet that already has the older header
+gets the new column names added to row 1 automatically on the next save; existing rows are not moved.
 
 ## Run locally
 

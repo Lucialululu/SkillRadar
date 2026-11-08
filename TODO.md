@@ -95,7 +95,7 @@ stays as it is. **What is left:** finish the peer trial, analyse it, make the fi
 - [ ] **README "Results so far" table:** Goal 1 CVs done (no longer "pending"), peer trial running (3 of 6–8)
 - [ ] **Literature:** read the cited sections, 2–3 lines each in `notes/literature_notes.md`
 - [ ] **Fig 1 pipeline diagram** (FigJam / draw.io)
-- [ ] **Housekeeping:** delete `text.txt` and `job-matches.patch`; delete `evaluation/peer_trial_results.csv` (the data lives in the Google Sheet) or keep it only for the facilitator's task-success columns; cv03 label "BM Spectrum LSF" → "IBM Spectrum LSF"
+- [ ] **Housekeeping:** delete `text.txt` and `job-matches.patch`; cv03 label "BM Spectrum LSF" → "IBM Spectrum LSF"
 
 ## Plan, weeks 10–13
 

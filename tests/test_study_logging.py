@@ -33,6 +33,10 @@ class FakeSheet:
     def append_row(self, values, value_input_option="RAW"):
         self.rows.append([str(v) for v in values])
 
+    def update(self, values, range_name):
+        assert range_name == "A1"
+        self.rows[0] = list(values[0])
+
 
 def test_sheet_gets_header_once_then_rows(tmp_path):
     from skillradar.study_logging import FIELDS
@@ -63,3 +67,43 @@ def test_free_text_is_capped(tmp_path):
 def test_no_sheet_configured_means_local_csv():
     from skillradar.study_logging import sheet_from_secrets
     assert sheet_from_secrets({}) is None
+
+
+def test_peer_trial_fields_are_saved(tmp_path):
+    out = tmp_path / "r.csv"
+    save_response({"participant_id": "P03", "missing_shown": 6, "missing_agreed": 5,
+                   "task1_upload_role": "no_help", "task3_understand_report": "with_help",
+                   "facilitator_notes": "hesitated at the\nrange key"}, path=out)
+    with out.open(newline="", encoding="utf-8") as f:
+        row = next(csv.DictReader(f))
+    assert (row["missing_shown"], row["missing_agreed"]) == ("6", "5")
+    assert row["task1_upload_role"] == "no_help" and row["task2_correct_tools"] == ""
+    assert row["facilitator_notes"] == "hesitated at the range key"
+
+
+def test_unknown_task_code_is_refused(tmp_path):
+    with pytest.raises(ValueError, match="task2"):
+        save_response({"participant_id": "P03", "task2_correct_tools": "easy"}, path=tmp_path / "r.csv")
+
+
+def test_old_sheet_header_is_extended_and_old_rows_kept():
+    """The pilot rows were saved before the peer-trial columns existed: the header grows, nothing moves."""
+    from skillradar.study_logging import FIELDS
+    old = FIELDS[:FIELDS.index("suggested_improvement") + 1]
+    pilot = ["P01"] + [""] * (len(old) - 1)
+    sheet = FakeSheet([list(old), pilot])
+    save_response({"participant_id": "P03", "task1_upload_role": "no_help"}, sheet=sheet)
+    assert sheet.rows[0] == FIELDS and sheet.rows[1] == pilot
+    assert dict(zip(FIELDS, sheet.rows[2]))["task1_upload_role"] == "no_help"
+
+
+def test_old_local_csv_is_upgraded(tmp_path):
+    from skillradar.study_logging import FIELDS
+    old = FIELDS[:FIELDS.index("suggested_improvement") + 1]
+    out = tmp_path / "r.csv"
+    out.write_text(",".join(old) + "\n" + "P01" + "," * (len(old) - 1) + "\n", encoding="utf-8")
+    save_response({"participant_id": "P03", "missing_shown": 4}, path=out)
+    with out.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert list(rows[0]) == FIELDS
+    assert [r["participant_id"] for r in rows] == ["P01", "P03"] and rows[1]["missing_shown"] == "4"

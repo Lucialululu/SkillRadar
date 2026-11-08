@@ -280,7 +280,16 @@ def get_study_sheet():
         return None
 
 
-def study_feedback(found: set[str], removed: list[str]) -> None:
+TASKS = {   # study field -> what the facilitator observed (the tasks read aloud, evaluation/peer_trial_guide.md)
+    "task1_upload_role": "Task 1: upload the CV and choose a role",
+    "task2_correct_tools": "Task 2: check and correct the tools found",
+    "task3_understand_report": "Task 3: explain what the report says",
+    "task4_choose_tool": "Task 4: choose a tool to learn and say why",
+}
+TASK_LABELS = {"no_help": "Without help", "with_help": "With help", "failed": "Not completed"}
+
+
+def study_feedback(found: set[str], removed: list[str], missing: list[str]) -> None:
     """Study-only app: feedback is always visible, but save requires consent."""
     st.write("")
     html(ui.header("Step 5 of 5: your feedback", "How was it?", "Please fill this in only if you are taking part in the SkillRadar study. "
@@ -309,6 +318,21 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
         st.caption("Please don't include names or anything from your CV.")
         confusion = st.text_area("What was confusing?", max_chars=1000, key="q_confusion")
         improvement = st.text_area("What would you improve?", max_chars=1000, key="q_improvement")
+        not_missing = []
+        if missing:
+            st.write("**The report says these tools are missing from your CV.** "
+                     "Select any that are *not* really missing (for example, they are on your CV under another name). "
+                     "Leave it empty if you agree with all of them.")
+            not_missing = st.multiselect("Not really missing", missing, key="q_not_missing",
+                                         placeholder="I agree with all of them")
+        st.divider()
+        st.markdown("**For the facilitator.** Filled in by the researcher at the end of the session, "
+                    "from what they observed. Participants can skip this part.")
+        tasks = {key: st.selectbox(label, list(TASK_LABELS), index=None, format_func=TASK_LABELS.get,
+                                   placeholder="Choose", key=f"q_{key}")
+                 for key, label in TASKS.items()}
+        notes = st.text_area("Where did they hesitate or get stuck? (no names, nothing from the CV)",
+                             max_chars=1000, key="q_facilitator_notes")
         consent = st.checkbox("I consent to saving my anonymous study results")
         submitted = st.form_submit_button("Save test result", type="primary")
         if submitted:
@@ -332,6 +356,10 @@ def study_feedback(found: set[str], removed: list[str]) -> None:
                         **answers,
                         "main_confusion": confusion,
                         "suggested_improvement": improvement,
+                        "missing_shown": len(missing),
+                        "missing_agreed": len(missing) - len(not_missing),
+                        **{key: value or "" for key, value in tasks.items()},
+                        "facilitator_notes": notes,
                     }, sheet=get_study_sheet())
                 except Exception as err:            # disk full, sheet not shared, no internet, ...
                     st.error(f"Could not save your feedback ({type(err).__name__}). Please tell the study facilitator.")
@@ -486,7 +514,7 @@ def step_report() -> None:
         if ss.added:
             st.write("Added: " + ", ".join(sorted(ss.added)))
         st.caption("Correction details are shown only for this session; CV content is not saved.")
-    study_feedback(found, removed)
+    study_feedback(found, removed, [display_name(t) for t in rep.missing["tool"]])
 
 
 # ---------------------------------------------------------------------------
