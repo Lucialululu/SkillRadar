@@ -103,7 +103,7 @@ Options to choose from or improve:
 
 **LLM methods (pseudo-code for Hybrid):**
 ```
-candidates ← keyword_matcher(text)                       # with the matched phrase
+candidates ← keyword_matcher(text)                      # with the matched phrase
 answer ← LLM(rules, 2 dev examples, text, candidates)   # JSON: keep/reject + quote; additional tools + quote
 for c in candidates: keep c unless answer rejects it
 for (name, quote) in answer.additional:
